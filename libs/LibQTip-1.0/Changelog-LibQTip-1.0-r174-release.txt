@@ -1,0 +1,19 @@
+------------------------------------------------------------------------
+r174 | torhal | 2015-02-25 01:22:27 +0000 (Wed, 25 Feb 2015) | 1 line
+Changed paths:
+   A /tags/r174-release (from /trunk:173)
+
+Tagging as r174-release
+------------------------------------------------------------------------
+r173 | torhal | 2015-02-25 01:21:15 +0000 (Wed, 25 Feb 2015) | 1 line
+Changed paths:
+   M /trunk/LibQTip-1.0.toc
+
+Updated ToC Interface to 60100.
+------------------------------------------------------------------------
+r171 | torhal | 2015-02-04 01:00:41 +0000 (Wed, 04 Feb 2015) | 1 line
+Changed paths:
+   M /trunk/LibQTip-1.0.lua
+
+Added releaseHandler parameter to SetAutoHideDelay() to facilitate good housekeeping practices. Must be a function. Addresses ticket #42
+------------------------------------------------------------------------

@@ -1,0 +1,19 @@
+## Interface: 60200
+## Title: FlashTalent
+## Notes: Quickly switch talents while out of combat
+## Author: Sonaza
+## Version: 1.0.3
+## OptionalDeps: Ace3
+## SavedVariables: FlashTalentDB
+
+#@no-lib-strip@
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\AceAddon-3.0\AceAddon-3.0.xml
+libs\AceDB-3.0\AceDB-3.0.xml
+libs\AceEvent-3.0\AceEvent-3.0.xml
+libs\LibQTip-1.0\LibQTip-1.0.lua
+#@end-no-lib-strip@
+
+core.lua
+Frame.xml

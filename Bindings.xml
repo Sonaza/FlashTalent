@@ -1,0 +1,9 @@
+<Bindings>
+	<Binding name="CLICK FlashTalentFrameToggler:LeftButton" header="FLASHTALENT" category="ADDONS"/>
+	<Binding name="FLASHTALENT_CHANGE_DUALSPEC" category="ADDONS">
+		if(not InCombatLockdown()) then FlashTalent:ChangeDualSpec(); end
+	</Binding>
+	<Binding name="FLASHTALENT_OPEN_ITEM_SETS_MENU" category="ADDONS">
+		if(not InCombatLockdown()) then FlashTalent:OpenItemSetsMenuAtCursor(); end
+	</Binding>
+</Bindings>
