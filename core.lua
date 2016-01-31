@@ -1,14 +1,21 @@
+------------------------------------------------------------
+-- FlashTalent by Sonaza
+-- http://sonaza.com
+------------------------------------------------------------
+
 local ADDON_NAME, SHARED = ...;
 
 local _G = getfenv(0);
 
 local LibStub = LibStub;
 local A = LibStub("AceAddon-3.0"):NewAddon(ADDON_NAME, "AceEvent-3.0");
-local AceDB = LibStub("AceDB-3.0");
 _G[ADDON_NAME] = A;
 SHARED[1] = A;
 
+local AceDB = LibStub("AceDB-3.0");
 local LibQTip = LibStub("LibQTip-1.0");
+
+local _;
 
 BINDING_HEADER_FLASHTALENT = "FlashTalent";
 _G["BINDING_NAME_CLICK FlashTalentFrameToggler:LeftButton"] = "Toggle FlashTalent";
@@ -192,8 +199,7 @@ function A:OnEnable()
 		A:CHALLENGE_MODE_START();
 	end
 	
-	-- FlashTalentFrame:EnableKeyboard(true);
-	-- FlashTalentFrame:SetPropagateKeyboardInput(true);
+	A:InitializeDatabroker();
 end
 
 function A:HasChallengeModeRestriction()
@@ -234,14 +240,6 @@ function A:RestorePosition()
 		FlashTalentFrame:ClearAllPoints();
 		FlashTalentFrame:GetPoint(position.Point, UIparent, position.RelativePoint, position.x, position.y);
 	end
-end
-
-function FlashTalentFrame_OnKeyDown(self, key)
-	-- if(key == "ESCAPE") then
-	-- 	self:Hide();
-	-- end
-	
-	-- return true;
 end
 
 function A:ToggleFrame()
@@ -334,6 +332,8 @@ function A:ACTIVE_TALENT_GROUP_CHANGED(event, activeSpec)
 			end
 		end
 	end
+	
+	A:UpdateDatabrokerText();
 end
 
 function A:PLAYER_TALENT_UPDATE()
@@ -341,6 +341,8 @@ function A:PLAYER_TALENT_UPDATE()
 	
 	A:UpdateTalentFrame();
 	A:UpdateGlyphs();
+	
+	A:UpdateDatabrokerText();
 end
 
 function A:USE_GLYPH()
@@ -348,12 +350,16 @@ function A:USE_GLYPH()
 	
 	A:ClearSelections();
 	FlashGlyphChangeFrame:Hide();
+	
+	A:UpdateDatabrokerText();
 end
 
 function A:GLYPH_UPDATED()
 	if(InCombatLockdown()) then return end
 	
 	A:UpdateGlyphs();
+	
+	A:UpdateDatabrokerText();
 end
 
 function A:PLAYER_LEVEL_UP()
@@ -361,6 +367,8 @@ function A:PLAYER_LEVEL_UP()
 	
 	A:UpdateTalentFrame();
 	A:UpdateGlyphs();
+	
+	A:UpdateDatabrokerText();
 end
 
 local glyphSlotLevels = {
@@ -588,6 +596,8 @@ function A:EQUIPMENT_SWAP_FINISHED(event, success, setName)
 		PaperDollFrame_ClearIgnoredSlots();
 		PaperDollFrame_IgnoreSlotsForSet(setName);
 		PaperDollEquipmentManagerPane_Update();
+		
+		A:UpdateDatabrokerText();
 	end
 end
 
