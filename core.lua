@@ -539,7 +539,7 @@ function FlashTalentChangeDualSpecButton_OnEnter(self)
 		
 		if(not spec) then
 			icon = "Interface\\Icons\\Ability_Marksmanship";
-			name = string.format("Spec %d", specIndex);
+			name = string.format("Specialization %d", specIndex);
 		else
 			_, name, description, icon = GetSpecializationInfo(spec);
 		end
@@ -552,7 +552,7 @@ function FlashTalentChangeDualSpecButton_OnEnter(self)
 	end
 	
 	if(numSpecs < 2) then
-		GameTooltip:AddDoubleLine(string.format("%s Spec 2", ICON_PATTERN:format("Interface\\Icons\\Ability_Marksmanship"), name), "Locked", 1, 1, 1, 1, 0.2, 0.2);
+		GameTooltip:AddDoubleLine(string.format("%s Specialization 2", ICON_PATTERN:format("Interface\\Icons\\Ability_Marksmanship"), name), "Locked", 1, 1, 1, 1, 0.2, 0.2);
 		GameTooltip:AddLine(" ");
 		
 		local playerLevel = UnitLevel("player");

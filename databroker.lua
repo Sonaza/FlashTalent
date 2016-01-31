@@ -33,9 +33,12 @@ function A:UpdateDatabrokerText()
 	local specID = GetSpecialization(false, false, GetActiveSpecGroup());
 	if(specID) then
 		local _, specName, _, icon = GetSpecializationInfo(specID);
-		tinsert(text, specName);
 		
 		A.databroker.icon = icon;
+		tinsert(text, specName);
+	else
+		A.databroker.icon = "Interface\\Icons\\Ability_Marksmanship"
+		tinsert(text, "No specialization");
 	end
 	
 	if(GetNumUnspentTalents() > 0) then
