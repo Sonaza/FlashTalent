@@ -156,8 +156,8 @@
 						<Texture name="$parentTexture" setAllPoints="true" file="Interface\AddOns\FlashTalent\lockfade">
 							<Color r="1" g="1" b="1" a="1"/>
 						</Texture>
-						<FontString name="$parentLevelText" parentKey="levelText" inherits="NumberFont_Outline_Med" text="poop" justifyH="CENTER">
-							<Size x="42" y="42"/>
+						<FontString name="$parentLevelText" parentKey="levelText" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
+							<Size x="60" y="42"/>
 							<Anchors>
 								<Anchor point="CENTER" x="0" y="-1"/>
 							</Anchors>
@@ -265,7 +265,7 @@
 			</Frame>
 			
 			<Frame name="FlashGlyphsFrame" parentKey="glyphs">
-				<Size x="102" y="68"/>
+				<Size x="32" y="242"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier1" x="7" y="0"/>
 				</Anchors>
@@ -304,24 +304,35 @@
 				</Frames>
 			</Frame>
 			
-			<Button name="$parentHelpButton" inherits="MainHelpPlateButton">
+			<Button name="$parentSettingsButton" inherits="BrowserButtonTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="FlashGlyphsFrameGlyph5" x="2" y="6"/>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="FlashGlyphsFrameGlyph5" x="1" y="-2"/>
 				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK" textureSubLevel="5">
+						<Texture parentKey="Icon" file="Interface\Buttons\UI-OptionsButton">
+							<Size x="16" y="16"/>
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
 				<Scripts>
 					<OnLoad>
-						self:SetScale(0.7);
-						self:RegisterForClicks("RightButtonUp");
+						self:SetScale(0.95);
+						self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 					</OnLoad>
-					<OnEnter function="FlashTalentFrameHelpButton_OnEnter"/>
-					<OnLeave function="FlashTalentFrameHelpButton_OnLeave"/>
-					<OnClick function="FlashTalentFrameHelpButton_OnClick"/>
+					<OnEnter function="FlashTalentFrameSettingsButton_OnEnter"/>
+					<OnLeave function="FlashTalentFrameSettingsButton_OnLeave"/>
+					<OnClick function="FlashTalentFrameSettingsButton_OnClick"/>
 				</Scripts>
 			</Button>
 		</Frames>
 		<Scripts>
 			<OnMouseDown function="FlashTalentFrame_OnMouseDown"/>
 			<OnMouseUp function="FlashTalentFrame_OnMouseUp"/>
+			<OnShow function="FlashTalentFrame_OnShow"/>
 			<OnHide function="FlashTalentFrame_OnHide"/>
 		</Scripts>
 	</Frame>

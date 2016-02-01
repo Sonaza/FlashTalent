@@ -104,13 +104,17 @@ function A:OnInitialize()
 		},
 		global = {
 			AskedKeybind = false,
-			HideTipButton = false,
 			Position = {
 				Point = "CENTER",
 				RelativePoint = "CENTER",
 				x = 180,
 				y = 0,
 			},
+			StickyWindow = false,
+			IsWindowOpen = false,
+			AlwaysShowTooltip = false,
+			AnchorGlyphs = "RIGHT",
+			ShowCooldown = true,
 		},
 	};
 	
@@ -156,6 +160,16 @@ function A:OnEnable()
 	A:RegisterEvent("BAG_UPDATE_DELAYED");
 	A:RegisterEvent("MODIFIER_STATE_CHANGED");
 	
+	A:RegisterEvent("SPELL_UPDATE_USABLE");
+	self.updaterFrame = CreateFrame("Frame");
+	self.updaterFrame:SetScript("OnUpdate", function(self, elapsed)
+		self.elapsed = (self.elapsed or 0) + elapsed;
+		if(self.elapsed > 0.1) then
+			A:UpdateTalentCooldowns();
+			self.elapsed = 0;
+		end
+	end);
+	
 	A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
 	A:RegisterEvent("EQUIPMENT_SETS_CHANGED", "EQUIPMENT_SWAP_FINISHED");
 	
@@ -176,6 +190,8 @@ function A:OnEnable()
 	A:UpdateTalentFrame();
 	A:UpdateGlyphs();
 	
+	A:UpdateFrame();
+	
 	hooksecurefunc("ModifyEquipmentSet", function(oldName, newName)
 		for specIndex, setName in pairs(A.db.char.SpecSets) do
 			if(setName == oldName) then
@@ -184,15 +200,14 @@ function A:OnEnable()
 		end
 	end);
 	
-	tinsert(UISpecialFrames, "FlashTalentFrame");
-	-- tinsert(UISpecialFrames, "FlashGlyphChangeFrame");
+	if(not self.db.global.StickyWindow) then
+		tinsert(UISpecialFrames, "FlashTalentFrame");
+	end
+	
+	tinsert(UISpecialFrames, "FlashGlyphChangeFrame");
 	
 	if(not A:IsBindingSet() and not A:HasAskedBinding()) then
 		StaticPopup_Show("FLASHTALENT_NO_KEYBIND");
-	end
-	
-	if(self.db.global.HideTipButton) then
-		FlashTalentFrameHelpButton:Hide();
 	end
 	
 	if(C_Scenario.IsChallengeMode() and ScenarioChallengeModeBlock.timerID ~= nil) then
@@ -200,6 +215,10 @@ function A:OnEnable()
 	end
 	
 	A:InitializeDatabroker();
+end
+
+function A:SPELL_UPDATE_USABLE()
+	A:UpdateTalentCooldowns();
 end
 
 function A:HasChallengeModeRestriction()
@@ -258,10 +277,14 @@ function A:ToggleFrame()
 		-- FlashTalentFrame.fadeout:Play();
 	end
 	
-	if(not A.ShortToggler and not InCombatLockdown()) then
+	if(not A.ShortToggler) then
 		A.ShortToggler = true;
 		A.SecureFrameToggler:SetAttribute("macrotext", "/run FlashTalent:ToggleFrame()");
 	end
+end
+
+function FlashTalentFrame_OnShow(self)
+	A.db.global.IsWindowOpen = true;
 end
 
 function FlashTalentFrame_OnHide(self)
@@ -269,7 +292,10 @@ function FlashTalentFrame_OnHide(self)
 		LibQTip:Release(A.EquipmentTooltip);
 		A.EquipmentTooltip = nil;
 	end
+	
 	FlashGlyphChangeFrame:Hide();
+	
+	A.db.global.IsWindowOpen = false;
 end
 
 function FlashTalentFrame_OnFadeInPlay()
@@ -286,7 +312,10 @@ function FlashTalentFrame_OnFadeOutFinished()
 end
 
 function A:PLAYER_REGEN_DISABLED()
-	FlashTalentFrame:Hide();
+	if(not self.db.global.StickyWindow) then
+		FlashTalentFrame:Hide();
+	end
+	
 	FlashGlyphChangeFrame:Hide();
 end
 
@@ -461,7 +490,7 @@ function FlashGlyphButtonTemplate_OnEnter(self)
 		-- self.ring:SetVertexColor(1, 1, 1);
 	end
 	
-	if(IsShiftKeyDown()) then
+	if(IsShiftKeyDown() or A.db.global.AlwaysShowTooltip) then
 		local glyphIndex = self:GetID();
 		local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon, glyphID = GetGlyphSocketInfo(glyphIndex);
 		
@@ -1006,7 +1035,12 @@ function A:OpenGlyphChangeMenu(glyphFrame, glyphIndex, glyphType, isActive)
 	
 	FlashGlyphChangeFrame:SetParent(glyphFrame);
 	FlashGlyphChangeFrame:ClearAllPoints();
-	FlashGlyphChangeFrame:SetPoint("TOPLEFT", glyphFrame, "TOPRIGHT", 8, -1);
+	
+	if(self.db.global.AnchorGlyphs == "RIGHT") then
+		FlashGlyphChangeFrame:SetPoint("TOPLEFT", glyphFrame, "TOPRIGHT", 8, -1);
+	elseif(self.db.global.AnchorGlyphs == "LEFT") then
+		FlashGlyphChangeFrame:SetPoint("TOPRIGHT", glyphFrame, "TOPLEFT", -8, -1);
+	end
 	FlashGlyphChangeFrame:Show();
 end
 
@@ -1066,6 +1100,12 @@ function A:SetTalentTooltip(talentButton)
 			lastLine:SetText("Your level is too low to select this talent.");
 			lastLine:SetTextColor(1, 0.1, 0.1);
 		end
+	elseif(talentButton.isOnCooldown) then
+		local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()];
+		if(lastLine and lastLine:GetText() == TALENT_TOOLTIP_ADDPREVIEWPOINT) then
+			lastLine:SetText("Talent on this row is on cooldown.");
+			lastLine:SetTextColor(1, 0.1, 0.1);
+		end
 	end
 	
 	GameTooltip:Show();
@@ -1080,7 +1120,7 @@ function FlashTalentButtonTemplate_OnEnter(self)
 		self.icon:SetVertexColor(1.0, 1.0, 1.0);
 	end
 	
-	if(IsShiftKeyDown()) then
+	if(IsShiftKeyDown() or A.db.global.AlwaysShowTooltip) then
 		A:SetTalentTooltip(self);
 	end
 	
@@ -1171,6 +1211,88 @@ function FlashTalentButtonTemplate_PreClick(self)
 	end
 end
 
+local GLOBAL_COOLDOWN = 61304;
+local function GetGCD()
+	local start, duration = GetSpellCooldown(GLOBAL_COOLDOWN);
+	if(start > 0 and duration > 0) then
+		return start + duration - GetTime();
+	end
+	
+	return 0;
+end
+
+function A:FormatTime(seconds)
+	if(seconds > 60) then
+		return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60);
+	elseif(seconds > 3) then
+		return string.format("%ds", seconds);
+	else
+		return string.format("%.01fs", seconds);
+	end
+end
+
+function A:UpdateTalentCooldowns()
+	local group = GetActiveSpecGroup();
+	
+	local playerLevel = UnitLevel("player");
+	local _, playerClass = UnitClass("player");
+	
+	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
+	
+	for tier = 1, 7 do
+		local tierIsOnCooldown = false;
+		
+		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		
+		local isUnlocked = (playerLevel >= tierLevels[tier]);
+		if(not isUnlocked) then
+			break;
+		else
+			tierFrame.lockFade:Hide();
+		end
+		
+		for column = 1, 3 do
+			local talentID, spellName, icon = GetTalentInfo(tier, column, group);
+			local isFree, selection = GetTalentRowSelectionInfo(tier);
+			
+			if(selection == talentID) then
+				local start, duration, enable = GetSpellCooldown(spellName);
+				
+				if(start and duration and start > 0 and duration > 0) then
+					local remaining = start + duration - GetTime();
+					
+					tierFrame.lockFade:Show();
+					tierFrame.lockFade.levelText:SetText(A:FormatTime(remaining));
+					tierIsOnCooldown = true;
+					
+					tierFrame.isOnCooldown = true;
+					tierFrame.spellCooldown = spellName;
+					tierFrame.remaining = remaining;
+				end
+			end
+		end
+		
+		if(not tierIsOnCooldown) then
+			tierFrame.isOnCooldown = false;
+			tierFrame.spellCooldown = nil;
+			tierFrame.remaining = 0;
+		end
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			if(not tierIsOnCooldown) then
+				button.icon:SetDesaturated(false);
+			else
+				button.icon:SetDesaturated(true);
+			end
+			
+			button.isOnCooldown = tierFrame.isOnCooldown;
+			button.spellCooldown = tierFrame.spellCooldown;
+			button.remaining = tierFrame.remaining;
+		end
+	end
+end
+
 function A:UpdateTalentFrame()
 	if(InCombatLockdown()) then return end
 	
@@ -1223,20 +1345,24 @@ function A:UpdateTalentFrame()
 					button.icon:SetVertexColor(0.6, 0.6, 0.6);
 					button:SetAttribute("macrotext",
 						"/stopmacro [combat]\n" ..
+						"/click TalentMicroButton\n"..
 						"/click PlayerTalentFrameTab2\n"..
 						"/click [spec:1] PlayerSpecTab1\n"..
 						"/click [spec:2] PlayerSpecTab2\n"..
+						"/click TalentMicroButton\n"..
 						"/run FlashTalent_Learn(" .. tier .. ", " .. talentID .. ")\n"
 					);
 				else
 					local talentButton = string.format("PlayerTalentFrameTalentsTalentRow%dTalent%d", tier, column);
 					button:SetAttribute("macrotext",
 						"/stopmacro [combat]\n" ..
+						"/click TalentMicroButton\n"..
 						"/click PlayerTalentFrameTab2\n"..
 						"/click [spec:1] PlayerSpecTab1\n"..
 						"/click [spec:2] PlayerSpecTab2\n"..
 						"/click " .. talentButton .. "\n" ..
 						"/click StaticPopup1Button1\n" ..
+						"/click TalentMicroButton\n"..
 						"/run FlashTalent_Learn(" .. tier .. ", " .. talentID .. ")\n"
 					);
 				end
@@ -1286,38 +1412,6 @@ function A:UpdateReagentCount()
 	end
 end
 
-function A:OnDisable()
-	
-end
-
-function FlashTalentFrameHelpButton_OnEnter(self)
-	GameTooltip:ClearAllPoints();
-	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE");
-	GameTooltip:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", 0, 6);
-	
-	GameTooltip:AddLine("FlashTalent Pro Tips")
-	GameTooltip:AddLine("Switch talents by hovering the one you wish to change to and left click it.", 1, 1, 1, true);
-	GameTooltip:AddLine(" ");
-	GameTooltip:AddLine("Switch glyphs by left clicking the glyph slot to open glyphs menu, choose a glyph and left click it. Remove glyph from slot by shift right clicking it.", 1, 1, 1, true);
-	GameTooltip:AddLine(" ");
-	GameTooltip:AddLine("Hold Shift when hovering to display tooltip", 0, 1, 0);
-	GameTooltip:AddLine("Hold Alt and drag to move FlashTalent", 0, 1, 0);
-	GameTooltip:AddLine("Shift-Right click this icon to hide it forever", 1, 0.8, 0);
-	
-	GameTooltip:Show();
-end
-
-function FlashTalentFrameHelpButton_OnLeave(self)
-	GameTooltip:Hide();
-end
-
-function FlashTalentFrameHelpButton_OnClick(self, button)
-	if(button == "RightButton" and IsShiftKeyDown()) then
-		self:Hide();
-		A.db.global.HideTipButton = true;
-	end
-end
-
 function FlashTalentFrame_OnMouseDown(self)
 	if(IsAltKeyDown()) then
 		FlashTalentFrame:StartMoving();
@@ -1330,5 +1424,131 @@ function FlashTalentFrame_OnMouseUp(self)
 		FlashTalentFrame:StopMovingOrSizing();
 		FlashTalentFrame.isMoving = false;
 		A:SavePosition();
+	end
+end
+
+function FlashTalentFrameSettingsButton_OnEnter(self)
+	if(DropDownList1:IsVisible()) then return end
+	
+	GameTooltip:ClearAllPoints();
+	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE");
+	
+	if(A.db.global.AnchorGlyphs == "RIGHT") then
+		GameTooltip:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", 2, 6);
+	elseif(A.db.global.AnchorGlyphs == "LEFT") then
+		GameTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -2, 6);
+	end
+	
+	GameTooltip:AddLine("FlashTalent Pro Tips")
+	GameTooltip:AddLine("Switch talents by hovering the one you wish to change to and left click it.", 1, 1, 1, true);
+	GameTooltip:AddLine(" ");
+	GameTooltip:AddLine("Switch glyphs by left clicking the glyph slot to open glyphs menu, choose a glyph and left click it. Remove glyph from slot by shift right clicking it.", 1, 1, 1, true);
+	GameTooltip:AddLine(" ");
+	GameTooltip:AddLine("Hold Alt and drag to move FlashTalent", 0, 1, 0);
+	if(not A.db.global.AlwaysShowTooltip) then
+		GameTooltip:AddLine("Hold Shift when hovering to display tooltip", 0, 1, 0);
+	end
+	GameTooltip:AddLine(" ");
+	GameTooltip:AddLine("Click this icon to view options", 1, 0.8, 0);
+	
+	GameTooltip:Show();
+end
+
+function FlashTalentFrameSettingsButton_OnLeave(self)
+	GameTooltip:Hide();
+end
+
+function FlashTalentFrameSettingsButton_OnClick(self, button)
+	GameTooltip:Hide();
+	A:OpenContextMenu(self);
+end
+
+function A:UpdateFrame()
+	if(not InCombatLockdown() and not FlashTalentFrame:IsVisible() and self.db.global.StickyWindow and self.db.global.IsWindowOpen) then
+		FlashTalentFrame:Show();
+	end
+	
+	if(self.db.global.AnchorGlyphs == "RIGHT") then
+		FlashGlyphsFrame:ClearAllPoints();
+		FlashGlyphsFrame:SetPoint("TOPLEFT", FlashTalentFrameTier1, "TOPRIGHT", 7, 0);
+	elseif(self.db.global.AnchorGlyphs == "LEFT") then
+		FlashGlyphsFrame:ClearAllPoints();
+		FlashGlyphsFrame:SetPoint("TOPRIGHT", FlashTalentFrameTier1, "TOPLEFT", -7, 0);
+	end
+end
+
+function A:ToggleEscapeClose()
+	if(not self.db.global.StickyWindow) then
+		tinsert(UISpecialFrames, "FlashTalentFrame");
+	else
+		for k, v in ipairs(UISpecialFrames) do
+			if(v == "FlashTalentFrame") then
+				table.remove(UISpecialFrames, k);
+				break;
+			end
+		end
+	end
+end
+
+function A:GetMenuData()
+	local data = {
+		{
+			text = "FlashTalent Options", isTitle = true, notCheckable = true,
+		},
+		{
+			text = "Always show tooltips",
+			func = function() self.db.global.AlwaysShowTooltip = not self.db.global.AlwaysShowTooltip; end,
+			checked = function() return self.db.global.AlwaysShowTooltip; end,
+			isNotRadio = true,
+		},
+		{
+			text = "Keep window open",
+			func = function() self.db.global.StickyWindow = not self.db.global.StickyWindow; A:ToggleEscapeClose(); end,
+			checked = function() return self.db.global.StickyWindow; end,
+			isNotRadio = true,
+		},
+		{
+			text = " ", isTitle = true, notCheckable = true,
+		},
+		{
+			text = "Anchor glyphs", isTitle = true, notCheckable = true,
+		},
+		{
+			text = "To the right",
+			func = function() self.db.global.AnchorGlyphs = "RIGHT"; A:UpdateFrame(); end,
+			checked = function() return self.db.global.AnchorGlyphs == "RIGHT"; end,
+		},
+		{
+			text = "To the left",
+			func = function() self.db.global.AnchorGlyphs = "LEFT"; A:UpdateFrame(); end,
+			checked = function() return self.db.global.AnchorGlyphs == "LEFT"; end,
+		},
+		{
+			text = " ", isTitle = true, notCheckable = true,
+		},
+		{
+			text = "Close FlashTalent window",
+			func = function() FlashTalentFrame:Hide(); end,
+			notCheckable = true,
+		},
+	};
+	
+	return data;
+end
+
+function A:OpenContextMenu(parentframe)
+	if(not A.ContextMenu) then
+		A.ContextMenu = CreateFrame("Frame", ADDON_NAME .. "ContextMenuFrame", parentframe, "UIDropDownMenuTemplate");
+	end
+	
+	A.ContextMenu:SetPoint("BOTTOM", parentframe, "CENTER", 0, 5);
+	EasyMenu(A:GetMenuData(), A.ContextMenu, "cursor", 0, 0, "MENU", 5);
+	
+	DropDownList1:ClearAllPoints();
+	
+	if(self.db.global.AnchorGlyphs == "RIGHT") then
+		DropDownList1:SetPoint("TOPLEFT", parentframe, "TOPRIGHT", 1, 0);
+	elseif(self.db.global.AnchorGlyphs == "LEFT") then
+		DropDownList1:SetPoint("TOPRIGHT", parentframe, "TOPLEFT", 1, 0);
 	end
 end
