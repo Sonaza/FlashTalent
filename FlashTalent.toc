@@ -2,7 +2,7 @@
 ## Title: FlashTalent
 ## Notes: Quickly switch talents while out of combat
 ## Author: Sonaza
-## Version: 1.1.0
+## Version: 1.2.0
 ## OptionalDeps: Ace3
 ## SavedVariables: FlashTalentDB
 
