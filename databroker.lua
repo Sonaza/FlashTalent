@@ -18,12 +18,12 @@ local ICON_PATTERN = "|T%s:14:14:0:0|t";
 function GetNumEmptyGlyphSlots()
 	local emptySlots = 0;
 	
-	for slotIndex = 1,6 do
-		local enabled, _, _, glyphSpellID = GetGlyphSocketInfo(slotIndex);
-		if(enabled and glyphSpellID == nil) then
-			emptySlots = emptySlots + 1;
-		end
-	end
+	-- for slotIndex = 1,6 do
+	-- 	local enabled, _, _, glyphSpellID = GetGlyphSocketInfo(slotIndex);
+	-- 	if(enabled and glyphSpellID == nil) then
+	-- 		emptySlots = emptySlots + 1;
+	-- 	end
+	-- end
 	
 	return emptySlots;
 end

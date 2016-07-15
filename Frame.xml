@@ -9,6 +9,14 @@
 					<TexCoords left="0.075" right="0.925" top="0.075" bottom="0.925"/>
 				</Texture>
 			</Layer>
+			<Layer level="OVERLAY">
+				<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="32" justifyH="CENTER" hidden="true">
+					<Size x="32" y="32"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="-1"/>
+					</Anchors>
+				</FontString>
+			</Layer>
 		</Layers>
 		<Scripts>
 			<OnLoad>
@@ -20,7 +28,7 @@
 			<OnDragStart function="FlashTalentButtonTemplate_OnDragStart"/>
 			<OnMouseDown function="FlashTalentFrame_OnMouseDown"/>
 			<OnMouseUp function="FlashTalentFrame_OnMouseUp"/>
-			<PreClick function="FlashTalentButtonTemplate_PreClick"/>
+			<OnClick function="FlashTalentButtonTemplate_OnClick"/>
 		</Scripts>
 	</Button>
 	
@@ -37,14 +45,14 @@
 				</Texture>
 			</Layer>
 			<Layer level="OVERLAY">
-				<Texture name="$parentRing" parentKey="ring" file="Interface\AddOns\FlashTalent\glyph-frame">
+				<Texture name="$parentRing" parentKey="ring" file="Interface\AddOns\FlashTalent\media\glyph-frame">
 					<Size x="40" y="40"/>
 					<Anchors>
 						<Anchor point="CENTER" x="0" y="0"/>
 					</Anchors>
 					<TexCoords left="0.0859375" right="0.4140625" top="0.171875" bottom="0.828125"/>
 				</Texture>
-				<Texture name="$parentHighlight" parentKey="highlight" file="Interface\AddOns\FlashTalent\glyph-frame" alphaMode="ADD" hidden="true">
+				<Texture name="$parentHighlight" parentKey="highlight" file="Interface\AddOns\FlashTalent\media\glyph-frame" alphaMode="ADD" hidden="true">
 					<Size x="40" y="40"/>
 					<Anchors>
 						<Anchor point="CENTER" x="0" y="0"/>
@@ -153,7 +161,7 @@
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK">
-						<Texture name="$parentTexture" setAllPoints="true" file="Interface\AddOns\FlashTalent\lockfade">
+						<Texture name="$parentTexture" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\lockfade">
 							<Color r="1" g="1" b="1" a="1"/>
 						</Texture>
 						<FontString name="$parentLevelText" parentKey="levelText" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
@@ -166,11 +174,106 @@
 					</Layer>
 				</Layers>
 			</Frame>
+			<Frame name="$parentGlowFrame" parentKey="glowFrame" enableMouse="false" hidden="true">
+				<Size x="102" y="34"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="$parent" x="0" y="0"/>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture parentKey="topGlowLine" atlas="_talent-green-glow" horizTile="true" alpha="0">
+							<Size x="102" y="6"/>
+							<Anchors>
+								<Anchor point="TOP" x="0" y="-1"/>
+							</Anchors>
+							<TexCoords left="0" right="1" top="1" bottom="0"/>
+						</Texture>
+						<Texture parentKey="bottomGlowLine" atlas="_talent-green-glow" horizTile="true" alpha="0">
+							<Size x="102" y="12"/>
+							<Anchors>
+								<Anchor point="BOTTOM" x="0" y="1"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Animations>
+					<AnimationGroup parentKey="anim" looping="BOUNCE">
+						<Alpha childKey="topGlowLine" order="1" fromAlpha="0.3" toAlpha="0.8" smoothing="IN_OUT" duration="1.3"/>
+						<Alpha childKey="bottomGlowLine" order="1" fromAlpha="0.3" toAlpha="0.8" smoothing="IN_OUT" duration="1.3"/>
+					</AnimationGroup>
+				</Animations>
+				<Scripts>
+					<OnShow>
+						self.anim:Play();
+					</OnShow>
+				</Scripts>
+			</Frame>
 		</Frames>
 	</Frame>
+	
+	<Font name="FlashTalent_NumberFont_Shadow" inherits="NumberFont_Outline_Large">
+		<Shadow>
+			<Offset>
+				<AbsDimension x="0" y="-2"/>
+			</Offset>
+			<Color r="0" g="0" b="0"/>
+		</Shadow>
+	</Font>
+	
+	<Button name="FlashTalentTabButtonTemplate" virtual="true">
+		<Size x="42" y="42"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentIcon" parentKey="icon" setAllPoints="true">
+					<Size x="27" y="27"/>
+					<Anchors>
+						<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture name="$parentIconFrame" parentKey="iconFrame" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\tabicon-frame">
+					<TexCoords left="0.0625" right="0.4375" top="0.125" bottom="0.875"/>
+				</Texture>
+				<Texture name="$parentIconFrameHover" parentKey="iconFrameHover" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\tabicon-frame" hidden="true" alphaMode="ADD">
+					<TexCoords left="0.0625" right="0.4375" top="0.125" bottom="0.875"/>
+					<Color r="1" g="1" b="1" a="0.5"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentIconFrameGlow" parentKey="iconFrameGlow" file="Interface\AddOns\FlashTalent\media\tabicon-frame" alphaMode="ADD" hidden="true">
+					<Size x="57" y="57"/>
+					<Anchors>
+						<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parentIcon" x="0" y="0"/>
+					</Anchors>
+					<TexCoords left="0.5" right="1" top="0" bottom="1"/>
+				</Texture>
+				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Shadow" text="" justifyH="CENTER" hidden="true">
+					<Size x="32" y="32"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="-1"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Animations>
+			<AnimationGroup looping="REPEAT" parentKey="glow">
+				<Alpha target="$parentIconFrameGlow" fromAlpha="1.0" toAlpha="0.5" duration="1.0" smoothing="IN_OUT" order="1"/>
+				<Alpha target="$parentIconFrameGlow" fromAlpha="0.5" toAlpha="1.0" duration="1.0" smoothing="IN_OUT" order="2"/>
+			</AnimationGroup>
+		</Animations>
+		<Scripts>
+			<OnLoad>
+				self.glow:Play();
+			</OnLoad>
+			<OnClick function="FlashTalentTabButton_OnClick"/>
+			<OnEnter function="FlashTalentTabButton_OnEnter"/>
+			<OnLeave function="FlashTalentTabButton_OnLeave"/>
+		</Scripts>
+	</Button>
 
 	<Frame name="FlashTalentFrame" parent="UIParent" hidden="true" movable="true" clampedToScreen="true" frameStrata="MEDIUM">
-		<Size x="106" y="242"/>
+		<Size x="152" y="242"/>
 		<Anchors>
 			<Anchor point="CENTER" x="180" y="0"/>
 		</Anchors>
@@ -190,23 +293,43 @@
 		</Animations>
 		<Layers>
 			<Layer level="BACKGROUND">
-				<Texture setAllPoints="true">
-					<Color r="0" g="0" b="0" a="0.85"/>
-				</Texture>
-			</Layer>
-			<Layer level="ARTWORK">
-				<FontString name="FlashTalentReagentText" inherits="NumberFont_Outline_Med" justifyH="LEFT" text="">
-					<Size x="142" y="20"/>
+				<Texture>
 					<Anchors>
-						<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="2"/>
+						<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-46" y="0"/>
 					</Anchors>
-				</FontString>
+					<Color r="0" g="0" b="0" a="0.8"/>
+				</Texture>
 			</Layer>
 		</Layers>
 		<Frames>
+			<Button name="$parentReagents" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
+				<Size x="70" y="20"/>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="2"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" justifyH="LEFT" text="">
+							<Size x="70" y="20"/>
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent" x="0" y="0"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+					</OnLoad>
+					<OnEnter function="FlashTalentReagentFrame_OnEnter"/>
+					<OnLeave function="FlashTalentReagentFrame_OnLeave"/>
+					<PreClick function="FlashTalentReagentFrame_PreClick"/>
+				</Scripts>
+			</Button>
 			<Button name="FlashTalentChangeDualSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
 				<Anchors>
-					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="5" y="0"/>
+					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="-53" y="0"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">
@@ -228,11 +351,30 @@
 					<OnLeave function="FlashTalentChangeDualSpecButton_OnLeave"/>
 				</Scripts>
 			</Button>
+			
 			<Frame name="$parentTier1" id="1" parentKey="tier1" inherits="FlashTalentTierTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent" x="2" y="-2"/>
 				</Anchors>
 			</Frame>
+			
+			<Frame name="$parentHonorLevel" parentKey="honorLevel" hidden="true">
+				<Size x="106" y="34"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
+							<Size x="102" y="42"/>
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="-2"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			
 			<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
 				<Anchors>
 					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier1" x="0" y="0"/>
@@ -264,41 +406,20 @@
 				</Anchors>
 			</Frame>
 			
-			<Frame name="FlashGlyphsFrame" parentKey="glyphs">
-				<Size x="32" y="242"/>
+			<Frame name="$parentTabs" parentKey="tabs">
+				<Size x="42" y="242"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier1" x="7" y="0"/>
+					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier1" x="4" y="0"/>
 				</Anchors>
 				<Frames>
-					<Button name="$parentGlyph2" id="2" parentKey="glyph2" inherits="FlashGlyphButtonTemplate">
+					<Button name="$parentPVETalents" id="1" parentKey="pvetalents" inherits="FlashTalentTabButtonTemplate">
 						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="4"/>
 						</Anchors>
 					</Button>
-					<Button name="$parentGlyph4" id="4" parentKey="glyph4" inherits="FlashGlyphButtonTemplate">
+					<Button name="$parentPVPTalents" id="2" parentKey="pvptalents" inherits="FlashTalentTabButtonTemplate">
 						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentGlyph2" x="0" y="-2"/>
-						</Anchors>
-					</Button>
-					<Button name="$parentGlyph6" id="6" parentKey="glyph6" inherits="FlashGlyphButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentGlyph4" x="0" y="-2"/>
-						</Anchors>
-					</Button>
-					
-					<Button name="$parentGlyph1" id="1" parentKey="glyph1" inherits="FlashGlyphButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentGlyph6" x="0" y="-10"/>
-						</Anchors>
-					</Button>
-					<Button name="$parentGlyph3" id="3" parentKey="glyph3" inherits="FlashGlyphButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentGlyph1" x="0" y="-2"/>
-						</Anchors>
-					</Button>
-					<Button name="$parentGlyph5" id="5" parentKey="glyph5" inherits="FlashGlyphButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentGlyph3" x="0" y="-2"/>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPVETalents" x="0" y="4"/>
 						</Anchors>
 					</Button>
 				</Frames>
@@ -306,7 +427,7 @@
 			
 			<Button name="$parentSettingsButton" inherits="BrowserButtonTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="FlashGlyphsFrameGlyph5" x="1" y="-2"/>
+					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parentTabs" x="0" y="2"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">

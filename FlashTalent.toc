@@ -1,8 +1,8 @@
-## Interface: 60200
+## Interface: 70000
 ## Title: FlashTalent
 ## Notes: Quickly switch talents while out of combat
 ## Author: Sonaza
-## Version: 1.2.0
+## Version: 2.0.0
 ## OptionalDeps: Ace3
 ## SavedVariables: FlashTalentDB
 

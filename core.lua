@@ -4,6 +4,7 @@
 ------------------------------------------------------------
 
 local ADDON_NAME, SHARED = ...;
+local _;
 
 local _G = getfenv(0);
 
@@ -15,14 +16,13 @@ SHARED[1] = A;
 local AceDB = LibStub("AceDB-3.0");
 local LibQTip = LibStub("LibQTip-1.0");
 
-local _;
-
 BINDING_HEADER_FLASHTALENT = "FlashTalent";
 _G["BINDING_NAME_CLICK FlashTalentFrameToggler:LeftButton"] = "Toggle FlashTalent";
 _G["BINDING_NAME_FLASHTALENT_CHANGE_DUALSPEC"] = "Switch Dual Specs";
 _G["BINDING_NAME_FLASHTALENT_OPEN_ITEM_SETS_MENU"] = "Open Equipment Menu at Cursor";
 
 local ICON_PATTERN = "|T%s:14:14:0:0|t";
+local ICON_PATTERN_NOBORDER = "|T%s:14:14:0:0:64:64:4:60:4:60|t";
 local CHECKBUTTON_ICON_PATTERN = "|T%s:16:16:0:0:32:32:4:28:4:28|t";
 
 StaticPopupDialogs["FLASHTALENT_NO_KEYBIND"] = {
@@ -95,30 +95,36 @@ StaticPopupDialogs["FLASHTALENT_RENAME_EQUIPMENT_SET"] = {
 	timeout = 0,
 };
 
+local TALENT_PVE = 1;
+local TALENT_PVP = 2;
+
 function A:OnInitialize()
 	local defaults = {
 		char = {
-			AskedKeybind = false,
-			AutoSwitchGearSet = false,
-			SpecSets = {},
+			AskedKeybind        = false,
+			AutoSwitchGearSet   = false,
+			OpenTalentTab       = 1,
+			PreviousSpec        = 0,
+			SpecSets            = {},
 		},
 		global = {
-			AskedKeybind = false,
+			AskedKeybind        = false,
 			Position = {
-				Point = "CENTER",
-				RelativePoint = "CENTER",
-				x = 180,
-				y = 0,
+				Point           = "CENTER",
+				RelativePoint   = "CENTER",
+				x               = 180,
+				y               = 0,
 			},
-			StickyWindow = false,
-			IsWindowOpen = false,
-			AlwaysShowTooltip = false,
-			AnchorGlyphs = "RIGHT",
-			ShowCooldown = true,
+			StickyWindow        = false,
+			IsWindowOpen        = false,
+			AlwaysShowTooltip   = false,
+			AnchorSide          = "RIGHT",
 		},
 	};
 	
 	self.db = AceDB:New("FlashTalentDB", defaults);
+	
+	A.CurrentTalentTab = self.db.char.OpenTalentTab;
 end
 
 function A:IsBindingSet()
@@ -145,20 +151,23 @@ function A:OnEnable()
 	A:RegisterEvent("PLAYER_REGEN_DISABLED");
 	A:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
 	A:RegisterEvent("PLAYER_TALENT_UPDATE");
+	A:RegisterEvent("PLAYER_PVP_TALENT_UPDATE");
+	
+	if(UnitLevel("player") < MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel()]) then
+		A:RegisterEvent("PLAYER_LEVEL_UP");
+	end
 	
 	A:RegisterEvent("SCENARIO_UPDATE");
 	A:RegisterEvent("CHALLENGE_MODE_START");
 	A:RegisterEvent("CHALLENGE_MODE_RESET");
 	A:RegisterEvent("CHALLENGE_MODE_COMPLETED", "CHALLENGE_MODE_RESET");
 	
-	A:RegisterEvent("USE_GLYPH");
-	A:RegisterEvent("GLYPH_UPDATED");
-	A:RegisterEvent("GLYPH_ADDED", "GLYPH_UPDATED");
-	A:RegisterEvent("GLYPH_REMOVED", "GLYPH_UPDATED");
-	
-	A:RegisterEvent("PLAYER_LEVEL_UP");
 	A:RegisterEvent("BAG_UPDATE_DELAYED");
 	A:RegisterEvent("MODIFIER_STATE_CHANGED");
+	
+	if(UnitFactionGroup("player") == "Neutral") then
+		A:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
+	end
 	
 	A:RegisterEvent("SPELL_UPDATE_USABLE");
 	self.updaterFrame = CreateFrame("Frame");
@@ -168,6 +177,8 @@ function A:OnEnable()
 			A:UpdateTalentCooldowns();
 			self.elapsed = 0;
 		end
+		
+		TalentMicroButtonAlert:Hide();
 	end);
 	
 	A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
@@ -188,8 +199,6 @@ function A:OnEnable()
 	);
 	
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
-	
 	A:UpdateFrame();
 	
 	hooksecurefunc("ModifyEquipmentSet", function(oldName, newName)
@@ -204,17 +213,147 @@ function A:OnEnable()
 		tinsert(UISpecialFrames, "FlashTalentFrame");
 	end
 	
-	tinsert(UISpecialFrames, "FlashGlyphChangeFrame");
-	
 	if(not A:IsBindingSet() and not A:HasAskedBinding()) then
 		StaticPopup_Show("FLASHTALENT_NO_KEYBIND");
 	end
 	
-	if(C_Scenario.IsChallengeMode() and ScenarioChallengeModeBlock.timerID ~= nil) then
-		A:CHALLENGE_MODE_START();
-	end
+	hooksecurefunc("SetSpecialization", function(newSpec)
+		if(GetSpecialization() ~= newSpec) then
+			A.OldSpecialization = GetSpecialization();
+		end
+	end);
+	
+	-- if(C_Scenario.IsChallengeMode() and ScenarioChallengeModeBlock.timerID ~= nil) then
+	-- 	A:CHALLENGE_MODE_START();
+	-- end
 	
 	A:InitializeDatabroker();
+	A:UpdateTabIcons();
+end
+
+function FlashTalentTabButton_OnClick(self)
+	if(self.disabled) then return end
+	if(InCombatLockdown()) then return end
+	
+	A.CurrentTalentTab = self:GetID();
+	A.db.char.OpenTalentTab = A.CurrentTalentTab;
+	
+	A:UpdateTabIcons();
+	A:UpdateTalentFrame();
+end
+	
+function FlashTalentTabButton_OnEnter(self)
+	if(not self.disabled) then
+		self.iconFrameHover:Show();
+	end
+	
+	A:HideSpecSwitchTooltip();
+	
+	local tabID = self:GetID();
+	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+	
+	if(tabID == 1) then -- PVE tab
+		GameTooltip:AddLine("Class Talents");
+		GameTooltip:AddLine("Switch to class talents.", 1, 1, 1);
+		
+		if(GetNumUnspentTalents() > 0) then
+			GameTooltip:AddLine(" ");
+			GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentTalents(), GetNumUnspentTalents() == 1 and "" or "s"));
+		end
+		
+	elseif(tabID == 2) then -- PVP Tab
+		GameTooltip:AddLine("Honor Talents");
+		GameTooltip:AddLine("|cffffffffSwitch to honor talents.|r");
+		
+		GameTooltip:AddLine(" ");
+		GameTooltip:AddLine(string.format("Current honor level: |cffffffff%d/%d|r", UnitHonorLevel("player"), GetMaxPlayerHonorLevel()));
+		
+		if(GetNumUnspentPvpTalents() > 0) then
+			GameTooltip:AddLine(" ");
+			GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentPvpTalents(), GetNumUnspentPvpTalents() == 1 and "" or "s"));
+		end
+	end
+	
+	GameTooltip:Show();
+end
+
+function FlashTalentTabButton_OnLeave(self)
+	self.iconFrameHover:Hide();
+	GameTooltip:Hide();
+end
+
+function A:UpdateTabIcons()
+	local level = UnitLevel("player");
+	
+	-- Class tab
+	local pvetab = FlashTalentFrameTabs.pvetalents;
+	
+	if(level >= SHOW_SPEC_LEVEL) then
+		local _, _, _, icon = GetSpecializationInfo(GetSpecialization());
+		SetPortraitToTexture(pvetab.icon, icon);
+		pvetab.icon:SetTexCoord(0, 1, 0, 1);
+	else
+		local _, class = UnitClass("player");
+		pvetab.icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles");
+		pvetab.icon:SetTexCoord(unpack(CLASS_ICON_TCOORDS[strupper(class)]));
+	end
+	
+	if(level < SHOW_SPEC_LEVEL) then
+		pvetab.disabled = true;
+	else
+		pvetab.disabled = false;
+	end
+	pvetab.icon:SetDesaturated(pvetab.disabled);
+	pvetab.iconFrame:SetDesaturated(pvetab.disabled);
+	
+	if(GetNumUnspentTalents() > 0) then
+		pvetab.text:Show();
+		pvetab.text:SetText(GetNumUnspentTalents());
+	else
+		pvetab.text:Hide();
+	end
+	
+	if(A.CurrentTalentTab == TALENT_PVE) then
+		pvetab.iconFrameGlow:Show();
+	else
+		pvetab.iconFrameGlow:Hide();
+	end
+	
+	-- Honor tab
+	local pvptab = FlashTalentFrameTabs.pvptalents;
+	
+	local faction = UnitFactionGroup("player");
+	if(faction ~= "Neutral") then
+		SetPortraitToTexture(pvptab.icon, "Interface\\Icons\\PVPCurrency-Conquest-" .. faction);
+	else
+		SetPortraitToTexture(pvptab.icon, "Interface\\Icons\\INV_Staff_2H_PandarenMonk_C_01");
+	end
+	
+	if(level < SHOW_PVP_TALENT_LEVEL) then
+		pvptab.disabled = true;
+	else
+		pvptab.disabled = false;
+	end
+	pvptab.icon:SetDesaturated(pvptab.disabled);
+	pvptab.iconFrame:SetDesaturated(pvptab.disabled);
+	
+	if(GetNumUnspentPvpTalents() > 0) then
+		pvptab.text:Show();
+		pvptab.text:SetText(GetNumUnspentPvpTalents());
+	else
+		pvptab.text:Hide();
+	end
+	
+	if(A.CurrentTalentTab == TALENT_PVP) then
+		pvptab.iconFrameGlow:Show();
+	else
+		pvptab.iconFrameGlow:Hide();
+	end
+end
+
+function A:NEUTRAL_FACTION_SELECT_RESULT()
+	A:UpdateTabIcons();
+	A:UnregisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 end
 
 function A:SPELL_UPDATE_USABLE()
@@ -222,27 +361,24 @@ function A:SPELL_UPDATE_USABLE()
 end
 
 function A:HasChallengeModeRestriction()
-	return C_Scenario.IsChallengeMode() and self.ChallengeModeActive;
+	-- return C_Scenario.IsChallengeMode() and self.ChallengeModeActive;
+	return false;
 end
 
 function A:SCENARIO_UPDATE()
-	if(not self.ChallengeModeActive and C_Scenario.IsChallengeMode() and ScenarioChallengeModeBlock.timerID ~= nil) then
-		A:CHALLENGE_MODE_START();
-	end
+	-- if(not self.ChallengeModeActive and C_Scenario.IsChallengeMode() and ScenarioChallengeModeBlock.timerID ~= nil) then
+	-- 	A:CHALLENGE_MODE_START();
+	-- end
 end
 
 function A:CHALLENGE_MODE_START()
 	self.ChallengeModeActive = true;
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
-	A:ClearSelections();
-	FlashGlyphChangeFrame:Hide();
 end
 
 function A:CHALLENGE_MODE_RESET()
 	self.ChallengeModeActive = false;
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
 end
 
 function A:SavePosition()
@@ -268,12 +404,10 @@ function A:ToggleFrame()
 		A:RestorePosition();
 		
 		A:UpdateTalentFrame();
-		A:UpdateGlyphs();
 		FlashTalentFrame:Show();
 		-- FlashTalentFrame.fadein:Play();
 	else
 		FlashTalentFrame:Hide();
-		FlashGlyphChangeFrame:Hide();
 		-- FlashTalentFrame.fadeout:Play();
 	end
 	
@@ -293,8 +427,6 @@ function FlashTalentFrame_OnHide(self)
 		A.EquipmentTooltip = nil;
 	end
 	
-	FlashGlyphChangeFrame:Hide();
-	
 	A.db.global.IsWindowOpen = false;
 end
 
@@ -308,15 +440,12 @@ function FlashTalentFrame_OnFadeOutFinished()
 	if(InCombatLockdown()) then return end
 	
 	FlashTalentFrame:Hide();
-	FlashGlyphChangeFrame:Hide();
 end
 
 function A:PLAYER_REGEN_DISABLED()
 	if(not self.db.global.StickyWindow) then
 		FlashTalentFrame:Hide();
 	end
-	
-	FlashGlyphChangeFrame:Hide();
 end
 
 function A:BAG_UPDATE_DELAYED()
@@ -325,37 +454,35 @@ function A:BAG_UPDATE_DELAYED()
 	A:UpdateReagentCount()
 end
 
-function A:ACTIVE_TALENT_GROUP_CHANGED(event, activeSpec)
+function A:ACTIVE_TALENT_GROUP_CHANGED(event)
 	if(InCombatLockdown()) then return end
 	
-	A:ClearSelections();
-	FlashGlyphChangeFrame:Hide();
+	A.db.char.PreviousSpec = A.OldSpecialization;
 	
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
 	
 	if(A.SpecTooltipOpen) then
 		FlashTalentChangeDualSpecButton_OnEnter(FlashTalentChangeDualSpecButton);
 	end
 	
 	if(self.db.char.AutoSwitchGearSet) then
+		local activeSpec = GetSpecialization();
+		
 		local setName;
 		if(self.db.char.SpecSets[activeSpec]) then
 			setName = self.db.char.SpecSets[activeSpec];
 		end
 		
 		if(not setName or not GetEquipmentSetInfoByName(setName)) then
-			local specID = GetSpecialization(false, false, activeSpec);
-			if(specID) then
-				local _, specName = GetSpecializationInfo(specID);
-				setName = specName;
-			end
+			local _, specName = GetSpecializationInfo(activeSpec);
+			setName = specName;
 		end
 		
 		local icon, setID, isEquipped, numItems, numEquipped, unknown, numMissing, numIgnored = GetEquipmentSetInfoByName(setName);
 		if(icon ~= nil and not isEquipped) then
 			if(numMissing == 0) then
-				C_Timer.After(0.42, function()
+				local latency = select(4, GetNetStats());
+				C_Timer.After(0.3 + latency / 1000, function()
 					UseEquipmentSet(setName);
 				end);
 			end
@@ -369,25 +496,15 @@ function A:PLAYER_TALENT_UPDATE()
 	if(InCombatLockdown()) then return end
 	
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
-	
+	A:UpdateTabIcons();
 	A:UpdateDatabrokerText();
 end
 
-function A:USE_GLYPH()
+function A:PLAYER_PVP_TALENT_UPDATE()
 	if(InCombatLockdown()) then return end
 	
-	A:ClearSelections();
-	FlashGlyphChangeFrame:Hide();
-	
-	A:UpdateDatabrokerText();
-end
-
-function A:GLYPH_UPDATED()
-	if(InCombatLockdown()) then return end
-	
-	A:UpdateGlyphs();
-	
+	A:UpdateTalentFrame();
+	A:UpdateTabIcons();
 	A:UpdateDatabrokerText();
 end
 
@@ -395,149 +512,13 @@ function A:PLAYER_LEVEL_UP()
 	if(InCombatLockdown()) then return end
 	
 	A:UpdateTalentFrame();
-	A:UpdateGlyphs();
-	
+	A:UpdateTabIcons();
 	A:UpdateDatabrokerText();
 end
 
-local glyphSlotLevels = {
-	[1] = 25, -- Minor 1
-	[2] = 25, -- Major 1
-	[3] = 50, -- Minor 2
-	[4] = 50, -- Major 2
-	[5] = 75, -- Minor 3
-	[6] = 75, -- Major 3
-}
-
-function A:UpdateGlyphs()
-	if(InCombatLockdown()) then return end
-	
-	for glyphIndex = 1, 6 do
-		local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon, glyphID = GetGlyphSocketInfo(glyphIndex);
-		
-		local glyph = _G['FlashGlyphsFrameGlyph' .. glyphIndex];
-		
-		glyph.glyphType = glyphType;
-		glyph.ring:SetVertexColor(0, 0, 0);
-		
-		glyph.levelText:SetText(glyphSlotLevels[glyphIndex]);
-		if(not enabled) then
-			glyph.levelText:Show();
-		else
-			glyph.levelText:Hide();
-		end
-		
-		if(glyphID and not A:HasChallengeModeRestriction()) then
-			glyph:SetAttribute("shift-type2", "macro");
-			glyph:SetAttribute("macrotext",
-				"/stopmacro [combat]\n" ..
-				"/click PlayerTalentFrameTab3\n"..
-				"/click [spec:1] PlayerSpecTab1\n"..
-				"/click [spec:2] PlayerSpecTab2\n"..
-				"/click GlyphFrameGlyph" .. glyphIndex .. " RightButton\n" ..
-				"/click StaticPopup1Button1\n"
-			);
-		elseif(A:HasChallengeModeRestriction()) then
-			glyph:SetAttribute("macrotext", "");
-		end
-		
-		glyph.unlocked = enabled;
-		
-		if(not enabled) then
-			glyph.spell = nil;
-			glyph.glyphID = nil;
-			
-			SetPortraitToTexture(glyph.icon, "Interface\\Icons\\inv_glyph_majordruid");
-			glyph.icon:SetVertexColor(0.2, 0.2, 0.2);
-			glyph.icon:SetDesaturated(true);
-			glyph:SetAlpha(0.9);
-		elseif(not glyphSpell) then
-			glyph.spell = nil;
-			glyph.glyphID = nil;
-			
-			SetPortraitToTexture(glyph.icon, "Interface\\Icons\\inv_glyph_majordruid");
-			glyph.icon:SetVertexColor(0.4, 0.4, 0.4);
-			glyph.icon:SetDesaturated(true);
-			glyph:SetAlpha(1.0);
-		else
-			glyph.spell = glyphSpell;
-			glyph.glyphID = glyphID;
-			
-			if(icon) then
-				SetPortraitToTexture(glyph.icon, icon);
-				glyph.icon:SetVertexColor(1.0, 1.0, 1.0);
-				glyph.icon:SetDesaturated(false);
-			else
-				SetPortraitToTexture(glyph.icon, "Interface\\Icons\\inv_glyph_majordruid");
-				glyph.icon:SetVertexColor(0.4, 0.4, 0.4);
-				glyph.icon:SetDesaturated(true);
-			end
-			
-			glyph:SetAlpha(1.0);
-		end
-	end
-end
-
-function FlashGlyphButtonTemplate_OnLoad(self)
-	self.glow:Play();
-	self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-end
-
-function FlashGlyphButtonTemplate_OnEnter(self)
-	if(self.unlocked and not A:HasChallengeModeRestriction()) then
-		self.glow:Play();
-		self.highlight:Show();
-		-- self.ring:SetVertexColor(1, 1, 1);
-	end
-	
-	if(IsShiftKeyDown() or A.db.global.AlwaysShowTooltip) then
-		local glyphIndex = self:GetID();
-		local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon, glyphID = GetGlyphSocketInfo(glyphIndex);
-		
-		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-		if(glyphID) then
-			GameTooltip:SetGlyphByID(glyphID);
-		else
-			if(glyphType == 1) then
-				GameTooltip:AddLine("Empty Major Glyph Slot");
-			elseif(glyphType == 2) then
-				GameTooltip:AddLine("Empty Minor Glyph Slot");
-			end
-		end
-		
-		if(enabled) then
-			if(glyphID) then
-				GameTooltip:AddLine("Left click to change the glyph.", 0, 1, 0);
-				GameTooltip:AddLine("Shift-Right click to unlearn.", 0, 1, 0);
-			else
-				GameTooltip:AddLine("Left click to set the glyph.", 0, 1, 0);
-			end
-		else
-			GameTooltip:AddLine(string.format("Glyph Slot Unlocked at Level %d.", glyphSlotLevels[glyphIndex]), 1, 0, 0);
-		end
-		
-		GameTooltip:Show();
-	end
-	
-	A.HoveredGlyph = self;
-end
-
-function FlashGlyphButtonTemplate_OnLeave(self)
-	GameTooltip:Hide();
-	A.HoveredGlyph = nil;
-	
-	if(not self.isSelected) then
-		self.highlight:Hide();
-		self.ring:SetVertexColor(0, 0, 0);
-	end
-end
-
 function A:ChangeDualSpec()
-	if(GetNumSpecGroups() <= 1) then return end
-	
-	local activeSpec = GetActiveSpecGroup();
-	if(activeSpec == 1) then SetActiveSpecGroup(2); end
-	if(activeSpec == 2) then SetActiveSpecGroup(1); end
+	if(A.db.char.PreviousSpec == 0) then return end
+	SetSpecialization(A.db.char.PreviousSpec);
 end
 
 function FlashTalentChangeDualSpecButton_OnClick(self, button)
@@ -545,68 +526,103 @@ function FlashTalentChangeDualSpecButton_OnClick(self, button)
 		A:ChangeDualSpec();
 	elseif(button == "RightButton") then
 		A.SpecTooltipOpen = false;
-		GameTooltip:Hide();
+		A.SpecSwitchTooltip:Hide();
+		
 		A:OpenItemSetsMenu(self);
 	end
 end
 
+function A:HideSpecSwitchTooltip()
+	if(not A.SpecSwitchTooltip) then return end
+	
+	A.SpecSwitchTooltip:Hide();
+	LibQTip:Release(A.SpecSwitchTooltip);
+	A.SpecSwitchTooltip = nil;
+end
+
 function FlashTalentChangeDualSpecButton_OnEnter(self)
 	if(A.EquipmentTooltip and A.EquipmentTooltip:IsVisible()) then return end
+	if(A.SpecSwitchTooltip and A.SpecSwitchTooltip:IsVisible()) then return end
 	
-	GameTooltip:ClearAllPoints();
-	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE");
-	GameTooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, -2);
+	A.SpecSwitchTooltip = LibQTip:Acquire("FlashTalentSpecSwitchTooltip", 2, "LEFT", "RIGHT");
+	local tooltip = A.SpecSwitchTooltip;
 	
-	GameTooltip:AddLine("Specializations");
+	tooltip:Clear();
+	tooltip:ClearAllPoints();
+	tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, -2);
 	
-	local activeSpec = GetActiveSpecGroup();
-	local numSpecs = GetNumSpecGroups();
+	tooltip:AddHeader("|cffffdd00Specializations|r");
+	tooltip:AddSeparator();
 	
-	for specIndex = 1, numSpecs do
-		local spec = GetSpecialization(false, false, specIndex);
-		local name, description, icon;
+	for specIndex = 1, GetNumSpecializations() do
+		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex);
 		
-		if(not spec) then
-			icon = "Interface\\Icons\\Ability_Marksmanship";
-			name = string.format("Specialization %d", specIndex);
-		else
-			_, name, description, icon = GetSpecializationInfo(spec);
+		local activeText = "";
+		
+		if(specIndex == GetSpecialization()) then
+			activeText = "|cff00ff00Active|r";
 		end
 		
-		if(specIndex == activeSpec) then
-			GameTooltip:AddDoubleLine(string.format("%s %s", ICON_PATTERN:format(icon), name), "Active", 1, 1, 1, 0, 1, 0);
-		else
-			GameTooltip:AddDoubleLine(string.format("%s %s", ICON_PATTERN:format(icon), name), "", 1, 1, 1, 0, 1, 0);
+		local lineIndex = tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+		
+		tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+			if(specIndex ~= GetSpecialization()) then
+				SetSpecialization(specIndex);
+				A:HideSpecSwitchTooltip();
+			end
+		end);
+	end
+	
+	local _, class = UnitClass("player");
+	local petname = UnitName("pet");
+	if(class == "HUNTER" and petname) then
+		tooltip:AddLine(" ");
+		tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
+		tooltip:AddSeparator();
+		
+		for specIndex = 1, GetNumSpecializations(false, true) do
+			local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+			
+			local activeText = "";
+			
+			if(specIndex == GetSpecialization(false, true)) then
+				activeText = "|cff00ff00Active|r";
+			end
+			
+			local lineIndex = tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+			
+			tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+				if(specIndex ~= GetSpecialization(false, true)) then
+					SetSpecialization(specIndex, true);
+					A:HideSpecSwitchTooltip();
+				end
+			end);
 		end
 	end
 	
-	if(numSpecs < 2) then
-		GameTooltip:AddDoubleLine(string.format("%s Specialization 2", ICON_PATTERN:format("Interface\\Icons\\Ability_Marksmanship"), name), "Locked", 1, 1, 1, 1, 0.2, 0.2);
-		GameTooltip:AddLine(" ");
-		
-		local playerLevel = UnitLevel("player");
-		
-		if(playerLevel < 30) then
-			GameTooltip:AddLine("Reach level 30 to unlock dual specialiation!");
-		else
-			GameTooltip:AddLine("Visit your class trainer to learn dual specialiation!");
-		end
+	tooltip:AddLine(" ");
+	
+	if(A.db.char.PreviousSpec ~= 0) then
+		local _, name = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
+		tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r", name));
 	end
 	
-	GameTooltip:AddLine(" ");
+	tooltip:AddLine("|cff00ff00Right click|r  View equipment sets");
 	
-	if(numSpecs > 1) then
-		GameTooltip:AddLine("Left click to switch specs", 0, 1, 0);
-	end
+	tooltip:SetAutoHideDelay(0.2, self);
 	
-	GameTooltip:AddLine("Right click to view equipment sets", 0, 1, 0);
-	GameTooltip:Show();
+	tooltip:Show();
 	
 	A.SpecTooltipOpen = true;
 end
 
 function FlashTalentChangeDualSpecButton_OnLeave(self)
-	GameTooltip:Hide();
+	if(not A.SpecSwitchTooltip) then return end
+	
+	-- A.SpecSwitchTooltip:Hide();
+	-- LibQTip:Release(A.SpecSwitchTooltip);
+	-- A.SpecSwitchTooltip = nil;
+	
 	A.SpecTooltipOpen = false;
 end
 
@@ -698,16 +714,16 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 				GameTooltip:SetOwner(self, "ANCHOR_LEFT");
 				GameTooltip:SetEquipmentSet(name);
 				GameTooltip:AddLine(" ");
-				GameTooltip:AddLine("Left click |cffffffff| Switch to this set", 0, 1, 0);
-				GameTooltip:AddLine("Right click |cffffffff| Rename the set", 0, 1, 0);
-				GameTooltip:AddLine("Shift Middle click |cffffffff| Update set", 0, 1, 0);
+				GameTooltip:AddLine("Left-Click  |cffffffffSwitch to this set", 0, 1, 0);
+				GameTooltip:AddLine("Right-Click  |cffffffffRename the set", 0, 1, 0);
+				GameTooltip:AddLine("Shift Middle-Click  |cffffffffUpdate set", 0, 1, 0);
 				GameTooltip:AddLine(" ");
 				
 				if(not specSets[name] or specSets[name] ~= GetActiveSpecGroup()) then
 					local _, specName, _, specIcon = GetSpecializationInfo(GetSpecialization());
-					GameTooltip:AddLine(string.format("Ctrl-Shift Right click |cffffffff| Tag this set for |cffffffff%s %s|r", ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
+					GameTooltip:AddLine(string.format("Ctrl Shift Right-Click  |cffffffffTag this set for |cffffffff%s %s|r", ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
 				else
-					GameTooltip:AddLine("Ctrl-Shift Right click |cffffffff| Remove spec tag from this set", 0, 1, 0);
+					GameTooltip:AddLine("Ctrl Shift Right-Click  |cffffffffRemove spec tag from this set", 0, 1, 0);
 				end
 				
 				GameTooltip:Show();
@@ -765,11 +781,11 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		GameTooltip:SetWidth(280);
 		
 		GameTooltip:AddLine("Automatic Gear Set Change");
-		GameTooltip:AddLine("Enable this to automatically change equipment set when changing dual specs.", 1, 1, 1, true);
+		GameTooltip:AddLine("Enable this to automatically change equipment set when changing specialization.", 1, 1, 1, true);
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("Alternatively you can also tag an equipment set specific to a set and still use a separate name if you |cffffdd00Ctrl-Shift Right click|r the set in the list. Tagged sets have priority.", 1, 1, 1, true);
+		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffdd00Ctrl Shift Right-Click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
 		
 		GameTooltip:Show();
 	end);
@@ -788,8 +804,6 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			ToggleCharacter("PaperDollFrame");
 		end
 		
-		SetCVar("characterFrameCollapsed", "0");
-		CharacterFrame_Expand();
 		PaperDollSidebarTab3:Click();
 		
 		local numEquipmentSets = GetNumEquipmentSets();
@@ -833,7 +847,6 @@ function A:UpdateEquipmentSet(setName)
 end
 
 local FlashTalentMenuCursorAnchor;
-
 function A:OpenItemSetsMenuAtCursor()
 	if(not FlashTalentMenuCursorAnchor) then
 		FlashTalentMenuCursorAnchor = CreateFrame("Frame", "FlashTalentMenuCursorAnchor", UIParent);
@@ -858,304 +871,44 @@ function A:RefreshItemSetsMenu(setName)
 	A:OpenItemSetsMenu(A.ItemSetsMenuParent, true, setName);
 end
 
-function A:ClearSelections(skip)
-	for glyphIndex = 1, 6 do
-		if(not skip or glyphIndex ~= skip) then
-			local glyph = _G['FlashGlyphsFrameGlyph' .. glyphIndex];
-			glyph.isSelected = false;
-			glyph.highlight:Hide();
-			glyph.ring:SetVertexColor(0, 0, 0);
-		end
-	end
-end
-
-function FlashGlyphButtonTemplate_PostClick(self, button)
-	if(A:HasChallengeModeRestriction()) then
-		UIErrorsFrame:AddMessage("Cannot change glyphs while in Challenge Mode.", 1.0, 0.1, 0.1, 1.0);
-		return;
-	elseif(button == "LeftButton") then
-		local glyphIndex = self:GetID();
-		local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon, glyphID = GetGlyphSocketInfo(glyphIndex);
-		
-		if(enabled) then
-			if(not self.isSelected) then
-				A:ClearSelections(glyphIndex);
-				A:OpenGlyphChangeMenu(self, glyphIndex, glyphType, glyphID);
-				self.isSelected = true;
-			
-				self.ring:SetVertexColor(1, 1, 1);
-			else
-				FlashGlyphChangeFrame:Hide();
-				self.highlight:Show();
-				self.isSelected = false;
-			
-				self.ring:SetVertexColor(0, 0, 0);
-			end
-		end
-	end
-end
-
-function FlashGlyphChangeFrame_OnShow()
-	
-end
-
-function FlashGlyphChangeFrame_OnHide()
-	A:ClearSelections();
-end
-
-function A:GetUsableGlyphs()
-	local glyphs = {
-		[GLYPH_TYPE_MAJOR] = {},
-		[GLYPH_TYPE_MINOR] = {},
-	};
-	
-	local numGlyphs = GetNumGlyphs();
-	for index = 1, numGlyphs do
-		local name, glyphType, isKnown, icon, glyphID, glyphLink, spec, specMatches, excluded = GetGlyphInfo(index);
-		if(name ~= "header" and isKnown == true and icon and specMatches) then
-			tinsert(glyphs[glyphType], {
-				index = index,
-				name = name,
-				icon = icon,
-				glyphID = glyphID,
-				spec = spec,
-				excluded = excluded,
-			});
-		end
-	end
-	
-	return glyphs;
-end
-
-function A:IsGlyphInUse(glyphID)
-	local numGlyphs = GetNumGlyphs();
-	for glyphIndex = 1, numGlyphs do
-		local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon, socketedGlyphID = GetGlyphSocketInfo(glyphIndex);
-		if(glyphID == socketedGlyphID) then return true end
-	end
-	
-	return false;
-end
-
-function A:OpenGlyphChangeMenu(glyphFrame, glyphIndex, glyphType, isActive)
-	if(InCombatLockdown()) then return end
-	if(not (glyphFrame and glyphIndex and glyphType)) then return end
-	
-	local glyphs = A:GetUsableGlyphs();
-	local numGlyphs = #glyphs[glyphType];
-	
-	local slotName;
-	if(glyphType == 1) then
-		slotName = string.format("major%d", glyphIndex / 2);
-	elseif(glyphType == 2) then
-		slotName = string.format("minor%d", (glyphIndex + 1) / 2);
-	end
-	
-	local columns = math.min(6, numGlyphs);
-	local rows = math.ceil(numGlyphs / 6);
-	
-	FlashGlyphChangeFrame:SetWidth(columns * 28);
-	FlashGlyphChangeFrame:SetHeight(rows * 28);
-	
-	local rowFirstButton = FlashGlyphChangeFrameButton1;
-	local previousButton = FlashGlyphChangeFrameButton1;
-	
-	for index = 1, 50 do
-		local button = _G['FlashGlyphChangeFrameButton' .. index];
-		if(button) then
-			button.glyphID = nil;
-			button:SetAttribute("type", nil);
-			button:Hide()
-		else
-			break;
-		end
-	end
-	
-	if(numGlyphs > 0) then
-		local _, reagentCount = GetGlyphClearInfo();
-		local hasReagents = (reagentCount or 0) > 0;
-		
-		FlashGlyphChangeFrame.noGlyphsWarning:Hide();
-		
-		for index = 1, numGlyphs do
-			local data = glyphs[glyphType][index];
-			
-			local button = _G['FlashGlyphChangeFrameButton' .. index];
-			if(not button) then
-				button = CreateFrame("Button", 'FlashGlyphChangeFrameButton' .. index, FlashGlyphChangeFrame, "FlashGlyphChangeButtonTemplate");
-				
-				if(index ~= 1 and (index - 1) % 6 == 0) then
-					button:SetPoint("TOPLEFT", rowFirstButton, "BOTTOMLEFT", 0, 0);
-				elseif(index ~= 1) then
-					button:SetPoint("TOPLEFT", previousButton, "TOPRIGHT", 0, 0);
-				end
-			end
-			
-			if(index ~= 1 and (index - 1) % 6 == 0) then
-				rowFirstButton = button;
-			end
-			previousButton = button;
-			
-			button.freeChange = (glyphFrame.glyphID == nil);
-			
-			button.glyphID = data.glyphID;
-			button.isActive = (data.glyphID == isActive);
-			button.glyphInUse = A:IsGlyphInUse(data.glyphID);
-			button.excluded = data.excluded;
-			
-			button.icon:SetTexture(data.icon);
-			button.icon:SetVertexColor(0.9, 0.9, 0.9);
-			button.icon:SetDesaturated(false);
-			
-			if(data.excluded) then
-				button:SetAttribute("type", nil);
-				button.icon:SetVertexColor(1.0, 0.2, 0.2);
-				button.icon:SetDesaturated(true);
-			elseif(button.glyphInUse) then
-				button:SetAttribute("type", nil);
-				button.icon:SetVertexColor(0.42, 0.42, 0.42);
-				button.icon:SetDesaturated(true);
-			elseif(not button.glyphInUse) then
-				button:SetAttribute("type", "glyph");
-				button:SetAttribute("glyph", data.name);
-				button:SetAttribute("slot", slotName);
-			end
-			
-			if(not hasReagents and glyphFrame.glyphID ~= nil) then
-				button:SetAttribute("type", nil);
-			end
-			
-			button:Show();
-		end
-	else
-		FlashGlyphChangeFrame.noGlyphsWarning:Show();
-		FlashGlyphChangeFrame:SetWidth(160);
-		FlashGlyphChangeFrame:SetHeight(32);
-	end
-	
-	FlashGlyphChangeFrame:SetParent(glyphFrame);
-	FlashGlyphChangeFrame:ClearAllPoints();
-	
-	if(self.db.global.AnchorGlyphs == "RIGHT") then
-		FlashGlyphChangeFrame:SetPoint("TOPLEFT", glyphFrame, "TOPRIGHT", 8, -1);
-	elseif(self.db.global.AnchorGlyphs == "LEFT") then
-		FlashGlyphChangeFrame:SetPoint("TOPRIGHT", glyphFrame, "TOPLEFT", -8, -1);
-	end
-	FlashGlyphChangeFrame:Show();
-end
-
-function FlashGlyphChangeButtonTemplate_PostClick(self)
-	if(not self.excluded and not self.glyphInUse) then
-		local reagent, reagentCount, reagentIcon, _, cost = GetGlyphClearInfo();
-			
-		if(reagentCount > 0 or self.freeChange or cost == 0) then
-			FlashGlyphChangeFrame:Hide();
-		elseif(reagentCount == 0 and not self.freeChange) then
-			StaticPopup_Show("FLASHTALENT_NOT_ENOUGH_REAGENTS", "glyph", string.format("%s %s", ICON_PATTERN:format(reagentIcon), reagent));
-		end
-	end
-end
-
-function FlashGlyphChangeButtonTemplate_OnEnter(self)
-	self.icon:SetVertexColor(1.0, 1.0, 1.0);
-	
-	if(self.excluded) then
-		self.icon:SetVertexColor(1.0, 0.4, 0.4);
-	elseif(self.glyphInUse) then
-		self.icon:SetVertexColor(0.8, 0.8, 0.8);
-	end
-	
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-	GameTooltip:SetGlyphByID(self.glyphID);
-	if(not self.excluded and not self.glyphInUse) then
-		GameTooltip:AddLine("Left click to change to this glyph.", 0, 1, 0);
-	elseif(self.glyphInUse) then
-		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("This glyph is currently in use.", 0.38, 0.77, 1.0);
-	end
-	GameTooltip:Show();
-end
-
-function FlashGlyphChangeButtonTemplate_OnLeave(self)
-	self.icon:SetVertexColor(0.9, 0.9, 0.9);
-	
-	if(self.excluded) then
-		self.icon:SetVertexColor(0.9, 0.3, 0.3);
-	elseif(self.glyphInUse) then
-		self.icon:SetVertexColor(0.3, 0.3, 0.3);
-	end
-	
-	GameTooltip:Hide();
-end
-	
----------------------------------------------
-
 function A:SetTalentTooltip(talentButton)
 	GameTooltip:SetOwner(talentButton, "ANCHOR_RIGHT");
-	GameTooltip:SetTalent(talentButton.talentID);
 	
-	if(not talentButton.isUnlocked) then
-		local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()];
-		if(lastLine and lastLine:GetText() == TALENT_TOOLTIP_ADDPREVIEWPOINT) then
-			lastLine:SetText("Your level is too low to select this talent.");
-			lastLine:SetTextColor(1, 0.1, 0.1);
+	if(talentButton.talentCategory == TALENT_PVE) then
+		GameTooltip:SetTalent(talentButton.talentID);
+		
+		if(not talentButton.isUnlocked) then
+			local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()];
+			if(lastLine and lastLine:GetText() == TALENT_TOOLTIP_ADDPREVIEWPOINT) then
+				lastLine:SetText("Your level is too low to select this talent.");
+				lastLine:SetTextColor(1, 0.1, 0.1);
+			end
+		elseif(talentButton.isOnCooldown) then
+			local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()];
+			if(lastLine and lastLine:GetText() == TALENT_TOOLTIP_ADDPREVIEWPOINT) then
+				lastLine:SetText("Talent on this row is on cooldown.");
+				lastLine:SetTextColor(1, 0.1, 0.1);
+			end
 		end
-	elseif(talentButton.isOnCooldown) then
-		local lastLine = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()];
-		if(lastLine and lastLine:GetText() == TALENT_TOOLTIP_ADDPREVIEWPOINT) then
-			lastLine:SetText("Talent on this row is on cooldown.");
-			lastLine:SetTextColor(1, 0.1, 0.1);
-		end
+		
+	elseif(talentButton.talentCategory == TALENT_PVP) then
+		GameTooltip:SetPvpTalent(talentButton.talentID);
 	end
 	
 	GameTooltip:Show();
-end
-
-function FlashTalentButtonTemplate_OnEnter(self)
-	if(self.tierFree and self.isUnlocked) then
-		self.icon:SetVertexColor(1.0, 1.0, 1.0);
-	elseif(not self.isSelected) then
-		self.icon:SetVertexColor(0.35, 0.35, 0.35);
-	else
-		self.icon:SetVertexColor(1.0, 1.0, 1.0);
-	end
-	
-	if(IsShiftKeyDown() or A.db.global.AlwaysShowTooltip) then
-		A:SetTalentTooltip(self);
-	end
-	
-	A.HoveredTalent = self;
-end
-
-function FlashTalentButtonTemplate_OnLeave(self)
-	if(self.tierFree and self.isUnlocked) then
-		self.icon:SetVertexColor(0.6, 0.6, 0.6);
-	elseif(not self.isSelected) then
-		self.icon:SetVertexColor(0.22, 0.22, 0.22);
-	else
-		self.icon:SetVertexColor(0.9, 0.9, 0.9);
-	end
-	
-	GameTooltip:Hide();
-	
-	A.HoveredTalent = nil;
 end
 
 function A:MODIFIER_STATE_CHANGED(event, key, state)
 	if(InCombatLockdown()) then return end
 	
-	if(not A.HoveredTalent and not A.HoveredGlyph) then return end
+	if(not A.HoveredTalent) then return end
 	
 	if(key == "LSHIFT" or key == "RSHIFT") then
 		if(state == 1) then
 			if(A.HoveredTalent) then
 				A:SetTalentTooltip(A.HoveredTalent);
 			end
-			
-			if(A.HoveredGlyph) then
-				FlashGlyphButtonTemplate_OnEnter(A.HoveredGlyph);
-			end
-		else
+		elseif(not A.db.global.AlwaysShowTooltip) then
 			GameTooltip:Hide();
 		end
 	end
@@ -1165,48 +918,72 @@ function FlashTalentButtonTemplate_OnDragStart(self)
 	if(InCombatLockdown() or not self.isSelected) then return end
 	
 	if(not IsAltKeyDown()) then
-		PickupTalent(self.talentID);
-	end
-end
-
-function FlashTalent_Learn(tier, talentID)
-	if(InCombatLockdown()) then return end
-	
-	local isFree = GetTalentRowSelectionInfo(tier);
-	C_Timer.After(isFree and 0 or 0.1, function()
-		LearnTalents(talentID);
-		A:DisableLearnButton();
-	end);
-end
-
-function A:HighlightTalent(highlightTier, highlightColumn)
-	for column = 1, 3 do
-		local buttonName = string.format("FlashTalentFrameTier%dTalent%d", highlightTier, column);
-		local button = _G[buttonName];
-		
-		if(button) then
-			if(column == highlightColumn) then
-				button.icon:SetVertexColor(0.9, 0.9, 0.9);
-			else
-				button.icon:SetVertexColor(0.22, 0.22, 0.22);
-			end
+		if(self.talentCategory == TALENT_PVE) then
+			PickupTalent(self.talentID);
+		elseif(self.talentCategory == TALENT_PVP) then
+			PickupPvpTalent(self.talentID);
 		end
 	end
 end
 
-function A:DisableLearnButton()
-	PlayerTalentFrameTalentsLearnButton:Disable();
-	PlayerTalentFrameTalentsLearnButton.Flash:Hide();
-	PlayerTalentFrameTalentsLearnButton.FlashAnim:Stop();
+function A:GetRealSpellID(spell_id)
+	local spell_name = GetSpellInfo(spell_id);
+	local name, _, _, _, _, _, realSpellID = GetSpellInfo(spell_name);
+	
+	return realSpellID or spell_id;
 end
 
-function FlashTalentButtonTemplate_PreClick(self)
-	if(A:HasChallengeModeRestriction()) then
-		UIErrorsFrame:AddMessage("Cannot change talents while in Challenge Mode.", 1.0, 0.1, 0.1, 1.0);
-	else
-		local reagent, reagentCount, reagentIcon, _, cost = GetTalentClearInfo();
-		if(reagentCount == 0 and not self.tierFree and self.isUnlocked and not self.isSelected and cost ~= 0) then
-			StaticPopup_Show("FLASHTALENT_NOT_ENOUGH_REAGENTS", "talent", string.format("%s %s", ICON_PATTERN:format(reagentIcon), reagent));
+function A:UnitHasBuff(unit, spell)
+	if(not unit or not spell) then return false end
+	
+	local realSpellID = A:GetRealSpellID(spell);
+	local spell_name = GetSpellInfo(realSpellID);
+	if(not spell_name) then return false end
+	
+	local name, _, _, _, _, duration, expirationTime, unitCaster = UnitAura(unit, spell_name, nil, "HELPFUL");
+	if(not name) then
+		return false;
+	end
+	
+	return true, expirationTime - GetTime();
+end
+
+function A:CanChangeTalents()
+	if(InCombatLockdown()) then return false end
+	if(IsResting()) then return true end
+	
+	local buffs = {
+		{ id = 227565, },            -- Codex of Clear Mind (100)
+		{ id = 226234, },            -- Codex of Tranquil Mind
+		{ id = 227563, lvl = 100 },  -- Tome of Clear Mind (100)
+		{ id = 227041 },             -- Tome of Tranquil Mind
+	};
+	
+	local level = UnitLevel("player");
+	
+	for _, data in ipairs(buffs) do
+		if(not data.lvl or (data.lvl and level <= data.lvl)) then
+			local hasBuff, remaining = A:UnitHasBuff("player", data.id);
+			if(hasBuff) then
+				return true, remaining;
+			end
+		end
+	end
+	
+	return false, nil;
+end
+
+function FlashTalentButtonTemplate_OnClick(self)
+	if(FlashTalentFrame.isMoving) then return end
+	-- if(not A:CanChangeTalents()) then
+	-- 	return;
+	-- end
+	
+	if(self.isUnlocked and self.talentID) then
+		if(self.talentCategory == TALENT_PVE) then
+			LearnTalent(self.talentID);
+		elseif(self.talentCategory == TALENT_PVP) then
+			LearnPvpTalent(self.talentID);
 		end
 	end
 end
@@ -1232,6 +1009,14 @@ function A:FormatTime(seconds)
 end
 
 function A:UpdateTalentCooldowns()
+	if(A.CurrentTalentTab == 1) then
+		A:UpdatePVETalentCooldowns();
+	elseif(A.CurrentTalentTab == 2) then
+		A:UpdatePVPTalentCooldowns();
+	end
+end
+
+function A:UpdatePVETalentCooldowns()
 	local group = GetActiveSpecGroup();
 	
 	local playerLevel = UnitLevel("player");
@@ -1252,10 +1037,10 @@ function A:UpdateTalentCooldowns()
 		end
 		
 		for column = 1, 3 do
-			local talentID, spellName, icon = GetTalentInfo(tier, column, group);
-			local isFree, selection = GetTalentRowSelectionInfo(tier);
+			local talentID, spellName, icon, isSelected = GetTalentInfo(tier, column, group);
+			-- local isFree, selection = GetTalentTierInfo(tier, group);
 			
-			if(selection == talentID) then
+			if(isSelected) then
 				local start, duration, enable = GetSpellCooldown(spellName);
 				
 				if(start and duration and start > 0 and duration > 0) then
@@ -1269,6 +1054,8 @@ function A:UpdateTalentCooldowns()
 					tierFrame.spellCooldown = spellName;
 					tierFrame.remaining = remaining;
 				end
+				
+				break;
 			end
 		end
 		
@@ -1293,10 +1080,142 @@ function A:UpdateTalentCooldowns()
 	end
 end
 
+function A:UpdatePVPTalentCooldowns()
+	local group = GetActiveSpecGroup();
+	
+	local honorLevel = UnitHonorLevel("player");
+	
+	for tier = 2, 7 do
+		local tierIsOnCooldown = false;
+		
+		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		
+		tierFrame.lockFade:Hide();
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			if(button and not button.isUnlocked) then return end
+			
+			local talentID, spellName, icon, isSelected = GetPvpTalentInfo(tier-1, column, group);
+			
+			if(isSelected) then
+				local start, duration, enable = GetSpellCooldown(spellName);
+				
+				if(start and duration and start > 0 and duration > 0) then
+					local remaining = start + duration - GetTime();
+					
+					button.text:Show();
+					button.text:SetText(A:FormatTime(remaining));
+					
+					tierIsOnCooldown = true;
+					tierFrame.isOnCooldown = true;
+					tierFrame.spellCooldown = spellName;
+					tierFrame.remaining = remaining;
+				end
+			end
+		end
+		
+		if(not tierIsOnCooldown) then
+			tierFrame.isOnCooldown = false;
+			tierFrame.spellCooldown = nil;
+			tierFrame.remaining = 0;
+		end
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			if(not button.isUnlocked) then return end
+			
+			if(not tierIsOnCooldown) then
+				button.icon:SetDesaturated(false);
+			else
+				button.icon:SetDesaturated(true);
+			end
+			
+			button.isOnCooldown = tierFrame.isOnCooldown;
+			button.spellCooldown = tierFrame.spellCooldown;
+			button.remaining = tierFrame.remaining;
+		end
+	end
+end
+
+local TALENT_COLOR_LOCKED               = { 0.22, 0.22, 0.22 };
+local TALENT_COLOR_LOCKED_HOVER         = { 0.35, 0.35, 0.35 };
+
+local TALENT_COLOR_CANLEARN             = { 0.82, 0.82, 0.82 };
+local TALENT_COLOR_CANLEARN_HOVER       = { 1.0, 1.0, 1.0 };
+
+local TALENT_COLOR_SELECTED             = { 0.9, 0.9, 0.9 };
+local TALENT_COLOR_SELECTED_HOVER       = { 1.0, 1.0, 1.0 };
+
+local function IconSetColor(frame, color)
+	if(not frame or not color) then return end
+	frame:SetVertexColor(unpack(color));
+end
+
+function A:HighlightTalent(highlightTier, highlightColumn)
+	for column = 1, 3 do
+		local buttonName = string.format("FlashTalentFrameTier%dTalent%d", highlightTier, column);
+		local button = _G[buttonName];
+		
+		if(button) then
+			if(column == highlightColumn) then
+				IconSetColor(button.icon, TALENT_COLOR_SELECTED);
+			else
+				IconSetColor(button.icon, TALENT_COLOR_LOCKED);
+			end
+		end
+	end
+end
+
+function FlashTalentButtonTemplate_OnEnter(self)
+	if(self.tierFree and self.isUnlocked) then
+		IconSetColor(self.icon, TALENT_COLOR_CANLEARN_HOVER);
+	elseif(not self.isSelected) then
+		IconSetColor(self.icon, TALENT_COLOR_LOCKED_HOVER);
+	else
+		IconSetColor(self.icon, TALENT_COLOR_SELECTED_HOVER);
+	end
+	
+	if(IsShiftKeyDown() or A.db.global.AlwaysShowTooltip) then
+		A:SetTalentTooltip(self);
+	end
+	
+	A:HideSpecSwitchTooltip();
+	
+	A.HoveredTalent = self;
+end
+
+function FlashTalentButtonTemplate_OnLeave(self)
+	if(self.tierFree and self.isUnlocked) then
+		IconSetColor(self.icon, TALENT_COLOR_CANLEARN);
+	elseif(not self.isSelected) then
+		IconSetColor(self.icon, TALENT_COLOR_LOCKED);
+	else
+		IconSetColor(self.icon, TALENT_COLOR_SELECTED);
+	end
+	
+	GameTooltip:Hide();
+	
+	A.HoveredTalent = nil;
+end
+
 function A:UpdateTalentFrame()
 	if(InCombatLockdown()) then return end
 	
-	A.SelectedTalents = {};
+	if(A.CurrentTalentTab == 1) then
+		A:UpdatePVETalentFrame();
+	elseif(A.CurrentTalentTab == 2) then
+		A:UpdatePVPTalentFrame();
+	end
+	
+	A:UpdateReagentCount();
+end
+
+function A:UpdatePVETalentFrame()
+	if(InCombatLockdown()) then return end
+	
+	FlashTalentFrameTier1:Show();
+	FlashTalentFrameHonorLevel:Hide();
 	
 	local group = GetActiveSpecGroup();
 	
@@ -1305,13 +1224,11 @@ function A:UpdateTalentFrame()
 	
 	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
 	
-	local _, reagentCount = GetTalentClearInfo();
-	local hasReagents = (reagentCount or 0) > 0;
-	
 	for tier = 1, 7 do
 		A:HighlightTalent(tier, -1);
 		
 		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		tierFrame.glowFrame:Hide();
 		
 		local isUnlocked = (playerLevel >= tierLevels[tier]);
 		if(not isUnlocked) then
@@ -1324,55 +1241,25 @@ function A:UpdateTalentFrame()
 		for column = 1, 3 do
 			local button = tierFrame["talent" .. column];
 			
-			local talentID, spellName, icon = GetTalentInfo(tier, column, group);
-			local isFree, selection = GetTalentRowSelectionInfo(tier);
-			local isSelected = (selection == talentID);
+			button.text:Hide();
 			
-			button:SetAttribute("type1", "macro");
+			local talentID, spellName, icon, isSelected, available, spellID = GetTalentInfo(tier, column, group);
+			local tierAvailable, selection = GetTalentTierInfo(tier, group);
+			local isFree = (selection == 0);
 			
 			if(isSelected) then
 				A:HighlightTalent(tier, column);
-				A.SelectedTalents[tier] = {
-					column = column,
-					talentID = talentID,
-				};
-				
-				button:SetAttribute("macrotext", "");
-			elseif(not isUnlocked or (not hasReagents and not isFree)) then
-				button:SetAttribute("macrotext", "");
-			elseif(talentID) then
-				if(isFree) then
-					button.icon:SetVertexColor(0.6, 0.6, 0.6);
-					button:SetAttribute("macrotext",
-						"/stopmacro [combat]\n" ..
-						"/click TalentMicroButton\n"..
-						"/click PlayerTalentFrameTab2\n"..
-						"/click [spec:1] PlayerSpecTab1\n"..
-						"/click [spec:2] PlayerSpecTab2\n"..
-						"/click TalentMicroButton\n"..
-						"/run FlashTalent_Learn(" .. tier .. ", " .. talentID .. ")\n"
-					);
-				else
-					local talentButton = string.format("PlayerTalentFrameTalentsTalentRow%dTalent%d", tier, column);
-					button:SetAttribute("macrotext",
-						"/stopmacro [combat]\n" ..
-						"/click TalentMicroButton\n"..
-						"/click PlayerTalentFrameTab2\n"..
-						"/click [spec:1] PlayerSpecTab1\n"..
-						"/click [spec:2] PlayerSpecTab2\n"..
-						"/click " .. talentButton .. "\n" ..
-						"/click StaticPopup1Button1\n" ..
-						"/click TalentMicroButton\n"..
-						"/run FlashTalent_Learn(" .. tier .. ", " .. talentID .. ")\n"
-					);
-				end
+			elseif(isUnlocked and talentID and isFree) then
+				IconSetColor(button.icon, TALENT_COLOR_CANLEARN);
 			end
 			
-			if(A:HasChallengeModeRestriction()) then
-				button:SetAttribute("macrotext", "");
+			if(isFree) then
+				tierFrame.glowFrame:Show();
 			end
 			
 			button.talentID = talentID;
+			button.talentCategory = TALENT_PVE;
+			
 			button.isSelected = isSelected;
 			
 			button.spellName = spellName;
@@ -1392,24 +1279,167 @@ function A:UpdateTalentFrame()
 			end
 		end
 	end
+end
+
+local PVP_TALENT_LEVELS = {
+	{  1, 13, 31 },
+	{  2, 16, 34 },
+	{  4, 19, 37 },
+	{  6, 22, 40 },
+	{  8, 25, 43 },
+	{ 10, 28, 46 },
+};
+
+function A:IsPVPTalentUnlocked(honorLevel, row, column)
+	return honorLevel >= PVP_TALENT_LEVELS[row][column], PVP_TALENT_LEVELS[row][column];
+end
+
+function A:UpdatePVPTalentFrame()
+	if(InCombatLockdown()) then return end
 	
-	A:UpdateReagentCount();
+	FlashTalentFrameTier1:Hide();
+	
+	local honorLevel = UnitHonorLevel("player");
+	
+	FlashTalentFrameHonorLevel.text:SetText(string.format("|cffffdd00Level|r %s", honorLevel));
+	FlashTalentFrameHonorLevel:Show();
+	
+	local group = GetActiveSpecGroup();
+	
+	local playerLevel = UnitLevel("player");
+	local _, playerClass = UnitClass("player");
+	
+	for tier = 2, 7 do
+		A:HighlightTalent(tier, -1, true);
+		
+		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		tierFrame.glowFrame:Hide();
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			
+			local isUnlocked, unlockLevel = A:IsPVPTalentUnlocked(honorLevel, tier-1, column);
+			
+			local talentID, spellName, icon, isSelected, available, spellID = GetPvpTalentInfo(tier-1, column, group);
+			local isRowFree = GetPvpTalentRowSelectionInfo(tier-1);
+			
+			if(isSelected) then
+				A:HighlightTalent(tier, column);
+			elseif(isUnlocked and talentID and isRowFree) then
+				button.icon:SetVertexColor(0.6, 0.6, 0.6);
+			end
+			
+			button.talentID = talentID;
+			button.talentCategory = TALENT_PVP;
+			
+			button.isSelected = isSelected;
+			
+			button.spellName = spellName;
+			
+			button.tier = tier;
+			button.column = column;
+			
+			button.tierFree = isRowFree;
+			button.isUnlocked = isUnlocked;
+			
+			button.icon:SetTexture(icon);
+			
+			if(isUnlocked) then
+				button.icon:SetDesaturated(false);
+			else
+				button.icon:SetDesaturated(true);
+				button.text:SetText(string.format("|cffff2222%d|r", unlockLevel));
+				button.text:Show();
+			end
+		end
+	end
+end
+
+local TALENT_CLEAR_ITEMS = {
+	{
+		-- Max lvl 100 items
+		115351, --141640, -- Tome of Clear Mind
+		141641, -- Codex of Clear Mind
+	},
+	{
+		-- Over lvl 100 items
+		141446, -- Tome of Tranquil Mind
+		141333, -- Codex of Tranquil Mind
+	},
+};
+
+function A:GetTalentClearInfo()
+	local level = UnitLevel("player");
+	local selection = math.floor( (UnitLevel("player")-1) / 100 ) + 1;
+	
+	local info = {};
+	for _, itemID in ipairs(TALENT_CLEAR_ITEMS[selection]) do
+		tinsert(info, {
+			itemID, GetItemCount(itemID), GetItemIcon(itemID),
+		});
+	end
+	
+	return info;
 end
 
 function A:UpdateReagentCount()
-	local reagent, reagentCount, reagentIcon, _, cost = GetTalentClearInfo();
+	local reagents = A:GetTalentClearInfo();
+	local reagentID, reagentCount, reagentIcon = unpack(reagents[1]);
+	
 	if(reagentIcon) then
 		local textPattern = "%s %d";
-		if(cost == 0) then
-			textPattern = "%s |cff4aff22%d|r";
-		elseif(reagentCount == 0) then
-			textPattern = "%s |cffff2222%d|r";
+		if(reagentCount == 0) then
+			textPattern = "%s |cffffdd22%d|r";
 		end
 		
-		FlashTalentReagentText:SetFormattedText(textPattern, ICON_PATTERN:format(reagentIcon), reagentCount);
+		FlashTalentFrameReagents.text:SetFormattedText(textPattern, ICON_PATTERN_NOBORDER:format(reagentIcon), reagentCount);
 	else
-		FlashTalentReagentText:SetText("");
+		FlashTalentFrameReagents.text:SetText("");
 	end
+	
+	if(InCombatLockdown()) then return end
+	
+	FlashTalentFrameReagents:SetAttribute("type1", "item");
+	FlashTalentFrameReagents:SetAttribute("item1", GetItemInfo(unpack(reagents[1])));
+	
+	FlashTalentFrameReagents:SetAttribute("type2", "item");
+	FlashTalentFrameReagents:SetAttribute("item2", GetItemInfo(unpack(reagents[2])));
+end
+
+function FlashTalentReagentFrame_OnEnter(self)
+	GameTooltip:SetOwner(self, "ANCHOR_NONE");
+	GameTooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", -2, 0);
+	
+	GameTooltip:AddLine("Tomes and Codexes")
+	
+	local reagents = A:GetTalentClearInfo();
+	for index, data in ipairs(reagents) do
+		local itemID, count, icon = unpack(data);
+		local name, link, quality = GetItemInfo(itemID);
+		
+		GameTooltip:AddDoubleLine(
+			string.format("%s %s", ICON_PATTERN:format(icon), name),
+			string.format("|cffffffff%d|r", count)
+		);
+		
+		if(index == 1) then
+			GameTooltip:AddLine("Left-Click to use " .. name);
+		elseif(index == 2) then
+			GameTooltip:AddLine("Right-Click to use " .. name);
+		end
+		
+		GameTooltip:AddLine(" ");
+	end
+	
+	GameTooltip:Show();
+end
+
+function FlashTalentReagentFrame_OnLeave(self)
+	GameTooltip:Hide();
+end
+
+function FlashTalentReagentFrame_PreClick(self, button)
+	print("POTATO", button)
 end
 
 function FlashTalentFrame_OnMouseDown(self)
@@ -1433,16 +1463,16 @@ function FlashTalentFrameSettingsButton_OnEnter(self)
 	GameTooltip:ClearAllPoints();
 	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE");
 	
-	if(A.db.global.AnchorGlyphs == "RIGHT") then
+	if(A.db.global.AnchorSide == "RIGHT") then
 		GameTooltip:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", 2, 6);
-	elseif(A.db.global.AnchorGlyphs == "LEFT") then
+	elseif(A.db.global.AnchorSide == "LEFT") then
 		GameTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -2, 6);
 	end
 	
 	GameTooltip:AddLine("FlashTalent Pro Tips")
 	GameTooltip:AddLine("Switch talents by hovering the one you wish to change to and left click it.", 1, 1, 1, true);
 	GameTooltip:AddLine(" ");
-	GameTooltip:AddLine("Switch glyphs by left clicking the glyph slot to open glyphs menu, choose a glyph and left click it. Remove glyph from slot by shift right clicking it.", 1, 1, 1, true);
+	GameTooltip:AddLine("You can switch between class and honor talents by clicking the circles next to talent rows.", 1, 1, 1, true);
 	GameTooltip:AddLine(" ");
 	GameTooltip:AddLine("Hold Alt and drag to move FlashTalent", 0, 1, 0);
 	if(not A.db.global.AlwaysShowTooltip) then
@@ -1468,12 +1498,16 @@ function A:UpdateFrame()
 		FlashTalentFrame:Show();
 	end
 	
-	if(self.db.global.AnchorGlyphs == "RIGHT") then
-		FlashGlyphsFrame:ClearAllPoints();
-		FlashGlyphsFrame:SetPoint("TOPLEFT", FlashTalentFrameTier1, "TOPRIGHT", 7, 0);
-	elseif(self.db.global.AnchorGlyphs == "LEFT") then
-		FlashGlyphsFrame:ClearAllPoints();
-		FlashGlyphsFrame:SetPoint("TOPRIGHT", FlashTalentFrameTier1, "TOPLEFT", -7, 0);
+	if(self.db.global.AnchorSide == "RIGHT") then
+		FlashTalentFrameTabs:ClearAllPoints();
+		FlashTalentFrameTabs:SetPoint("TOPLEFT", FlashTalentFrameTier1, "TOPRIGHT", 4, 0);
+		
+		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", -5, 0);
+	elseif(self.db.global.AnchorSide == "LEFT") then
+		FlashTalentFrameTabs:ClearAllPoints();
+		FlashTalentFrameTabs:SetPoint("TOPRIGHT", FlashTalentFrameTier1, "TOPLEFT", -4, 0);
+		
+		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 6, 0);
 	end
 end
 
@@ -1511,17 +1545,17 @@ function A:GetMenuData()
 			text = " ", isTitle = true, notCheckable = true,
 		},
 		{
-			text = "Anchor glyphs", isTitle = true, notCheckable = true,
+			text = "Anchor side", isTitle = true, notCheckable = true,
 		},
 		{
 			text = "To the right",
-			func = function() self.db.global.AnchorGlyphs = "RIGHT"; A:UpdateFrame(); end,
-			checked = function() return self.db.global.AnchorGlyphs == "RIGHT"; end,
+			func = function() self.db.global.AnchorSide = "RIGHT"; A:UpdateFrame(); end,
+			checked = function() return self.db.global.AnchorSide == "RIGHT"; end,
 		},
 		{
 			text = "To the left",
-			func = function() self.db.global.AnchorGlyphs = "LEFT"; A:UpdateFrame(); end,
-			checked = function() return self.db.global.AnchorGlyphs == "LEFT"; end,
+			func = function() self.db.global.AnchorSide = "LEFT"; A:UpdateFrame(); end,
+			checked = function() return self.db.global.AnchorSide == "LEFT"; end,
 		},
 		{
 			text = " ", isTitle = true, notCheckable = true,
@@ -1546,9 +1580,9 @@ function A:OpenContextMenu(parentframe)
 	
 	DropDownList1:ClearAllPoints();
 	
-	if(self.db.global.AnchorGlyphs == "RIGHT") then
+	if(self.db.global.AnchorSide == "RIGHT") then
 		DropDownList1:SetPoint("TOPLEFT", parentframe, "TOPRIGHT", 1, 0);
-	elseif(self.db.global.AnchorGlyphs == "LEFT") then
+	elseif(self.db.global.AnchorSide == "LEFT") then
 		DropDownList1:SetPoint("TOPRIGHT", parentframe, "TOPLEFT", 1, 0);
 	end
 end
