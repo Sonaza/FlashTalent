@@ -15,19 +15,6 @@ local LibQTip = LibStub("LibQTip-1.0");
 
 local ICON_PATTERN = "|T%s:14:14:0:0|t";
 
-function GetNumEmptyGlyphSlots()
-	local emptySlots = 0;
-	
-	-- for slotIndex = 1,6 do
-	-- 	local enabled, _, _, glyphSpellID = GetGlyphSocketInfo(slotIndex);
-	-- 	if(enabled and glyphSpellID == nil) then
-	-- 		emptySlots = emptySlots + 1;
-	-- 	end
-	-- end
-	
-	return emptySlots;
-end
-
 function A:UpdateDatabrokerText()
 	local text = {};
 	
@@ -37,17 +24,14 @@ function A:UpdateDatabrokerText()
 		
 		A.databroker.icon = icon;
 		tinsert(text, specName);
-	else
-		A.databroker.icon = "Interface\\Icons\\Ability_Marksmanship"
-		tinsert(text, "No specialization");
 	end
 	
 	if(GetNumUnspentTalents() > 0) then
-		tinsert(text, string.format("|cffff4141%dT|r", GetNumUnspentTalents(), GetNumUnspentTalents() == 1 and "" or "s"));
+		tinsert(text, string.format("|cffff4141%d|r|cffffdd00T|r", GetNumUnspentTalents()));
 	end
 	
-	if(GetNumEmptyGlyphSlots() > 0) then
-		tinsert(text, string.format("|cffff4141%dG|r", GetNumEmptyGlyphSlots(), GetNumEmptyGlyphSlots() == 1 and "" or "s"));
+	if(GetNumUnspentPvpTalents() > 0) then
+		tinsert(text, string.format("|cffff4141%d|r|cffffdd00HT|r", GetNumUnspentPvpTalents()));
 	end
 	
 	A.databroker.text = table.concat(text, " / ");
@@ -88,7 +72,10 @@ function A:InitializeDatabroker()
 					DEFAULT_CHAT_FRAME:AddMessage("|cffffd200FlashTalent|r Can't switch spec when in combat!");
 				end
 			elseif(button == "RightButton") then
-				GameTooltip:Hide();
+				if(frame.tooltip and frame.tooltip:IsVisible()) then
+					LibQTip:Release(frame.tooltip);
+					frame.tooltip = nil;
+				end
 				
 				local tooltip = A:OpenItemSetsMenu(frame);
 				
@@ -102,69 +89,107 @@ function A:InitializeDatabroker()
 			A:DataBroker_OnEnter(frame);
 		end,
 		OnLeave = function(frame)
-			GameTooltip:Hide();
+			A:DataBroker_OnLeave(frame);
 		end,
 	});
 
 	A:UpdateDatabrokerText();
 end
 
+local ICON_ROLES = "Interface\\LFGFRAME\\LFGROLE";
+local ROLES = {
+	DAMAGER = "|T%s:14:14:0:0:64:16:16:32:0:16|t",
+	TANK    = "|T%s:14:14:0:0:64:16:32:48:0:16|t",
+	HEALER  = "|T%s:14:14:0:0:64:16:48:64:0:16|t",
+};
+
 function A:DataBroker_OnEnter(parent)
-	if(A.EquipmentTooltip and A.EquipmentTooltip:IsVisible()) then return end
+	A:HideSpecButtonTooltip();
 	
-	GameTooltip:ClearAllPoints();
-	
-	GameTooltip:SetOwner(parent, "ANCHOR_PRESERVE");
+	parent.tooltip = LibQTip:Acquire("FlashTalentSpecButtonDataBrokerTooltip", 2, "LEFT", "RIGHT");
+	A.DataBrokerTooltip = parent.tooltip;
 	
 	local point, relativePoint, offset = A:GetVerticalAnchors(parent);
 	
-	GameTooltip:ClearAllPoints();
-	GameTooltip:SetPoint(point, parent, relativePoint, 0, offset);
+	parent.tooltip:Clear();
+	parent.tooltip:ClearAllPoints();
+	parent.tooltip:SetPoint(point, parent, relativePoint, 0, offset);
 	
-	GameTooltip:AddLine("FlashTalent");
+	parent.tooltip:AddHeader("|cffffdd00Specializations|r");
+	parent.tooltip:AddSeparator();
 	
-	local activeSpec = GetActiveSpecGroup();
-	local numSpecs = GetNumSpecGroups();
-	
-	for specIndex = 1, numSpecs do
-		local spec = GetSpecialization(false, false, specIndex);
-		local name, description, icon;
+	for specIndex = 1, GetNumSpecializations() do
+		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex);
 		
-		if(not spec) then
-			icon = "Interface\\Icons\\Ability_Marksmanship";
-			name = string.format("Specialization %d", specIndex);
-		else
-			_, name, description, icon = GetSpecializationInfo(spec);
+		local color = "|cffeeeeee";
+		local activeText = "";
+		
+		if(specIndex == GetSpecialization()) then
+			activeText = "|cff00ff00Active|r";
 		end
 		
-		if(specIndex == activeSpec) then
-			GameTooltip:AddDoubleLine(string.format("%s %s", ICON_PATTERN:format(icon), name), "Active", 1, 1, 1, 0, 1, 0);
-		else
-			GameTooltip:AddDoubleLine(string.format("%s %s", ICON_PATTERN:format(icon), name), "", 1, 1, 1, 0, 1, 0);
+		if(specIndex == GetSpecialization() or specIndex == A.db.char.PreviousSpec) then
+			color = "|cff8ce2ff";
+		end
+		
+		local lineIndex = parent.tooltip:AddLine(
+			string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
+			activeText
+		);
+		
+		parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(parent, _, button)
+			if(specIndex ~= GetSpecialization()) then
+				SetSpecialization(specIndex);
+				A:HideSpecButtonTooltip();
+			end
+		end);
+	end
+	
+	local _, class = UnitClass("player");
+	local petname = UnitName("pet");
+	if(class == "HUNTER" and petname) then
+		parent.tooltip:AddLine(" ");
+		parent.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
+		parent.tooltip:AddSeparator();
+		
+		for specIndex = 1, GetNumSpecializations(false, true) do
+			local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+			
+			local activeText = "";
+			
+			if(specIndex == GetSpecialization(false, true)) then
+				activeText = "|cff00ff00Active|r";
+			end
+			
+			local lineIndex = parent.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+			
+			parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(parent, _, button)
+				if(specIndex ~= GetSpecialization(false, true)) then
+					SetSpecialization(specIndex, true);
+					-- A:HideSpecButtonTooltip();
+				end
+			end);
 		end
 	end
 	
-	if(numSpecs < 2) then
-		GameTooltip:AddDoubleLine(string.format("%s Specialization 2", ICON_PATTERN:format("Interface\\Icons\\Ability_Marksmanship"), name), "Locked", 1, 1, 1, 1, 0.2, 0.2);
-		GameTooltip:AddLine(" ");
-		
-		local playerLevel = UnitLevel("player");
-		
-		if(playerLevel < 30) then
-			GameTooltip:AddLine("Reach level 30 to unlock dual specialiation!");
-		else
-			GameTooltip:AddLine("Visit your class trainer to learn dual specialiation!");
-		end
+	parent.tooltip:AddLine(" ");
+	
+	parent.tooltip:AddLine("|cff00ff00Left-click|r  Toggle FlashTalent");
+	
+	if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
+		local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
+		parent.tooltip:AddLine(string.format("|cff00ff00Middle-click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
 	end
 	
-	GameTooltip:AddLine(" ");
+	parent.tooltip:AddLine("|cff00ff00Right-click|r  View equipment sets");
 	
-	GameTooltip:AddLine("Left click to toggle FlashTalent", 0, 1, 0);
-	
-	if(numSpecs > 1) then
-		GameTooltip:AddLine("Middle click to switch specs", 0, 1, 0);
+	parent.tooltip:SetAutoHideDelay(0.25, parent);
+	parent.tooltip:Show();
+end
+
+function A:DataBroker_OnLeave(parent)
+	if(parent.tooltip and parent.tooltip:IsVisible()) then
+		-- LibQTip:Release(parent.tooltip);
+		-- parent.tooltip = nil;
 	end
-	
-	GameTooltip:AddLine("Right click to view equipment sets", 0, 1, 0);
-	GameTooltip:Show();
 end

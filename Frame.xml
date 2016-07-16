@@ -265,6 +265,7 @@
 		<Scripts>
 			<OnLoad>
 				self.glow:Play();
+				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 			</OnLoad>
 			<OnClick function="FlashTalentTabButton_OnClick"/>
 			<OnEnter function="FlashTalentTabButton_OnEnter"/>
@@ -277,20 +278,6 @@
 		<Anchors>
 			<Anchor point="CENTER" x="180" y="0"/>
 		</Anchors>
-		<Animations>
-			<AnimationGroup parentKey="fadein" setToFinalAlpha="true">
-				<Alpha fromAlpha="0.0" toAlpha="1.0" duration="0.02" order="1" smoothing="IN_OUT"/>
-				<Scripts>
-					<OnPlay function="FlashTalentFrame_OnFadeInPlay"/>
-				</Scripts>
-			</AnimationGroup>
-			<AnimationGroup parentKey="fadeout" setToFinalAlpha="true">
-				<Alpha fromAlpha="1.0" toAlpha="0.0" duration="0.1" order="1" smoothing="IN_OUT"/>
-				<Scripts>
-					<OnFinished function="FlashTalentFrame_OnFadeOutFinished"/>
-				</Scripts>
-			</AnimationGroup>
-		</Animations>
 		<Layers>
 			<Layer level="BACKGROUND">
 				<Texture>
@@ -327,7 +314,7 @@
 					<PreClick function="FlashTalentReagentFrame_PreClick"/>
 				</Scripts>
 			</Button>
-			<Button name="FlashTalentChangeDualSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
+			<Button name="FlashTalentSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="-53" y="0"/>
 				</Anchors>
@@ -346,9 +333,9 @@
 						self:SetScale(0.80);
 						self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 					</OnLoad>
-					<OnClick function="FlashTalentChangeDualSpecButton_OnClick"/>
-					<OnEnter function="FlashTalentChangeDualSpecButton_OnEnter"/>
-					<OnLeave function="FlashTalentChangeDualSpecButton_OnLeave"/>
+					<OnClick function="FlashTalentSpecButton_OnClick"/>
+					<OnEnter function="FlashTalentSpecButton_OnEnter"/>
+					<OnLeave function="FlashTalentSpecButton_OnLeave"/>
 				</Scripts>
 			</Button>
 			
@@ -377,7 +364,7 @@
 			
 			<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
 				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier1" x="0" y="0"/>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="2" y="-36"/>
 				</Anchors>
 			</Frame>
 			<Frame name="$parentTier3" id="3" parentKey="tier3" inherits="FlashTalentTierTemplate">
@@ -409,7 +396,7 @@
 			<Frame name="$parentTabs" parentKey="tabs">
 				<Size x="42" y="242"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier1" x="4" y="0"/>
+					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier2" x="4" y="36"/>
 				</Anchors>
 				<Frames>
 					<Button name="$parentPVETalents" id="1" parentKey="pvetalents" inherits="FlashTalentTabButtonTemplate">
