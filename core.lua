@@ -110,6 +110,7 @@ function A:OnInitialize()
 		},
 		global = {
 			AskedKeybind        = false,
+			
 			Position = {
 				Point           = "CENTER",
 				RelativePoint   = "CENTER",
@@ -117,9 +118,12 @@ function A:OnInitialize()
 				y               = 0,
 			},
 			StickyWindow        = false,
+			WindowScale         = 1.0,
 			IsWindowOpen        = false,
+			
 			AlwaysShowTooltip   = false,
 			AnchorSide          = "RIGHT",
+			
 			HideBlizzAlert      = false,
 		},
 	};
@@ -1612,6 +1616,8 @@ function A:UpdateFrame()
 		
 		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 6, 0);
 	end
+	
+	FlashTalentFrame:SetScale(self.db.global.WindowScale);
 end
 
 function A:ToggleEscapeClose()
@@ -1625,6 +1631,21 @@ function A:ToggleEscapeClose()
 			end
 		end
 	end
+end
+
+function A:GetWindowScaleMenu()
+	local windowScales = { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.2, 1.3, 1.4, 1.5, };
+	local menu = {};
+	
+	for index, scale in ipairs(windowScales) do
+		tinsert(menu, {
+			text = string.format("%d%%", scale * 100),
+			func = function() self.db.global.WindowScale = scale; A:UpdateFrame(); CloseMenus(); end,
+			checked = function() return self.db.global.WindowScale == scale end,
+		});
+	end
+	
+	return menu;
 end
 
 function A:GetMenuData()
@@ -1654,17 +1675,33 @@ function A:GetMenuData()
 			text = " ", isTitle = true, notCheckable = true,
 		},
 		{
-			text = "Anchor side", isTitle = true, notCheckable = true,
+			text = "Miscellaneous", isTitle = true, notCheckable = true,
 		},
 		{
-			text = "To the right",
-			func = function() self.db.global.AnchorSide = "RIGHT"; A:UpdateFrame(); end,
-			checked = function() return self.db.global.AnchorSide == "RIGHT"; end,
+			text = string.format("|cffffdd00Window scale:|r %d%%", A.db.global.WindowScale * 100),
+			hasArrow = true,
+			notCheckable = true,
+			menuList = A:GetWindowScaleMenu(),
 		},
 		{
-			text = "To the left",
-			func = function() self.db.global.AnchorSide = "LEFT"; A:UpdateFrame(); end,
-			checked = function() return self.db.global.AnchorSide == "LEFT"; end,
+			text = string.format("|cffffdd00Anchor side:|r %s", string.lower(self.db.global.AnchorSide)),
+			hasArrow = true,
+			notCheckable = true,
+			menuList = {
+				{
+					text = "Anchor side", isTitle = true, notCheckable = true,
+				},
+				{
+					text = "To the right",
+					func = function() self.db.global.AnchorSide = "RIGHT"; A:UpdateFrame(); end,
+					checked = function() return self.db.global.AnchorSide == "RIGHT"; end,
+				},
+				{
+					text = "To the left",
+					func = function() self.db.global.AnchorSide = "LEFT"; A:UpdateFrame(); end,
+					checked = function() return self.db.global.AnchorSide == "LEFT"; end,
+				},
+			},
 		},
 		{
 			text = " ", isTitle = true, notCheckable = true,
