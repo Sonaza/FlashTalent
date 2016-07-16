@@ -1011,7 +1011,7 @@ function A:CanChangeTalents()
 	if(IsResting()) then return true end
 	
 	local buffs = {
-		{ id = 45548, },            -- Codex of Clear Mind (100) 227565
+		{ id = 227565, },            -- Codex of Clear Mind (100) 
 		{ id = 226234, },            -- Codex of Tranquil Mind
 		{ id = 227563, lvl = 100 },  -- Tome of Clear Mind (100)
 		{ id = 227041 },             -- Tome of Tranquil Mind
