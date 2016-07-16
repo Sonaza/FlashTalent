@@ -9,9 +9,9 @@
     * Added support for hunter pet specializations.
   * Updated reagent listing to display number of the tomes and the codices instead.
     * Clicking the number will allow you to use a tome or a codex to be able to change talents in non-rest zones.
-  * Improved visual look and distinction of unspent talent rows.
+  * Improved visual look and distinction of empty talent rows.
   * Added new keybind option to directly open honor talents tab. The old keybind now directly opens class talents tab.
-  * Added option to change window scale from 80% to 150%.
+  * Added option to change window scale between 80% and 150%.
   * Added option to disable Blizzard alert about unspent talent points.
 
 ## 1.2.0
