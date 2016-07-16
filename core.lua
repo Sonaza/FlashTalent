@@ -510,10 +510,12 @@ function A:UNIT_AURA()
 	A:UpdateReagentCount();
 end
 
-function A:ACTIVE_TALENT_GROUP_CHANGED(event)
+function A:ACTIVE_TALENT_GROUP_CHANGED()
 	if(InCombatLockdown()) then return end
 	
-	A.db.char.PreviousSpec = A.OldSpecialization;
+	if(A.OldSpecialization ~= nil and A.OldSpecialization ~= 0) then
+		A.db.char.PreviousSpec = A.OldSpecialization;
+	end
 	
 	A:UpdateTalentFrame();
 	
