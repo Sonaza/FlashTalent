@@ -1,28 +1,23 @@
 ------------------------------------------------------------
 -- FlashTalent by Sonaza
+-- All rights reserved
 -- http://sonaza.com
 ------------------------------------------------------------
 
-local ADDON_NAME, SHARED = ...;
-
-local LibStub = LibStub;
-local A = unpack(SHARED);
-
+local ADDON_NAME, Addon = ...;
 local _;
 
-local LDB = LibStub:GetLibrary("LibDataBroker-1.1");
+local LibDataBroker = LibStub:GetLibrary("LibDataBroker-1.1");
 local LibQTip = LibStub("LibQTip-1.0");
 
-local ICON_PATTERN = "|T%s:14:14:0:0|t";
-
-function A:UpdateDatabrokerText()
+function Addon:UpdateDatabrokerText()
 	local text = {};
 	
 	local specID = GetSpecialization(false, false, GetActiveSpecGroup());
 	if(specID) then
 		local _, specName, _, icon = GetSpecializationInfo(specID);
 		
-		A.databroker.icon = icon;
+		Addon.databroker.icon = icon;
 		tinsert(text, specName);
 	end
 	
@@ -34,10 +29,10 @@ function A:UpdateDatabrokerText()
 		tinsert(text, string.format("|cffff4141%d|r|cffffdd00HT|r", GetNumUnspentPvpTalents()));
 	end
 	
-	A.databroker.text = table.concat(text, " / ");
+	Addon.databroker.text = table.concat(text, " / ");
 end
 
-function A:GetVerticalAnchors(frame)
+function Addon:GetVerticalAnchors(frame)
 	local point, relativePoint = "TOP", "BOTTOM";
 	local offset = -4;
 	
@@ -52,8 +47,8 @@ function A:GetVerticalAnchors(frame)
 	return point, relativePoint, offset;
 end
 
-function A:InitializeDatabroker()
-	A.databroker = LDB:NewDataObject(ADDON_NAME, {
+function Addon:InitializeDatabroker()
+	Addon.databroker = LibDataBroker:NewDataObject(ADDON_NAME, {
 		type = "data source",
 		label = "FlashTalent",
 		text = "FlashTalent",
@@ -61,13 +56,13 @@ function A:InitializeDatabroker()
 		OnClick = function(frame, button)
 			if(button == "LeftButton") then
 				if(not InCombatLockdown()) then
-					A:ToggleFrame();
+					Addon:ToggleFrame();
 				else
 					DEFAULT_CHAT_FRAME:AddMessage("|cffffd200FlashTalent|r Can't toggle window when in combat!");
 				end
 			elseif(button == "MiddleButton") then
 				if(not InCombatLockdown()) then
-					A:ChangeDualSpec();
+					Addon:ChangeDualSpec();
 				else
 					DEFAULT_CHAT_FRAME:AddMessage("|cffffd200FlashTalent|r Can't switch spec when in combat!");
 				end
@@ -77,39 +72,32 @@ function A:InitializeDatabroker()
 					frame.tooltip = nil;
 				end
 				
-				local tooltip = A:OpenItemSetsMenu(frame);
+				local tooltip = Addon:OpenItemSetsMenu(frame);
 				
-				local point, relativePoint, offset = A:GetVerticalAnchors(frame);
+				local point, relativePoint, offset = Addon:GetVerticalAnchors(frame);
 				
 				tooltip:ClearAllPoints();
 				tooltip:SetPoint(point, frame, relativePoint, 0, offset);
 			end
 		end,
 		OnEnter = function(frame)
-			A:DataBroker_OnEnter(frame);
+			Addon:DataBroker_OnEnter(frame);
 		end,
 		OnLeave = function(frame)
-			A:DataBroker_OnLeave(frame);
+			-- Addon:DataBroker_OnLeave(frame);
 		end,
 	});
 
-	A:UpdateDatabrokerText();
+	Addon:UpdateDatabrokerText();
 end
 
-local ICON_ROLES = "Interface\\LFGFRAME\\LFGROLE";
-local ROLES = {
-	DAMAGER = "|T%s:14:14:0:0:64:16:16:32:0:16|t",
-	TANK    = "|T%s:14:14:0:0:64:16:32:48:0:16|t",
-	HEALER  = "|T%s:14:14:0:0:64:16:48:64:0:16|t",
-};
-
-function A:DataBroker_OnEnter(parent)
-	A:HideSpecButtonTooltip();
+function Addon:DataBroker_OnEnter(parent)
+	Addon:HideSpecButtonTooltip();
 	
 	parent.tooltip = LibQTip:Acquire("FlashTalentDataBrokerTooltip", 2, "LEFT", "RIGHT");
-	A.DataBrokerTooltip = parent.tooltip;
+	Addon.DataBrokerTooltip = parent.tooltip;
 	
-	local point, relativePoint, offset = A:GetVerticalAnchors(parent);
+	local point, relativePoint, offset = Addon:GetVerticalAnchors(parent);
 	
 	parent.tooltip:Clear();
 	parent.tooltip:ClearAllPoints();
@@ -132,13 +120,13 @@ function A:DataBroker_OnEnter(parent)
 			activeText = "|cff00ff00Active|r";
 		end
 		
-		if(isActiveSpecialization or specIndex == A.db.char.PreviousSpec) then
+		if(isActiveSpecialization or specIndex == Addon.db.char.PreviousSpec) then
 			color = "|cff8ce2ff";
 		end
 		
 		if(areSpecsUnlocked or isActiveSpecialization) then
 			local lineIndex = parent.tooltip:AddLine(
-				string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
+				string.format("%s %s%s|r %s", FLASHTALENT_ICON_PATTERN:format(icon), color, name, FLASHTALENT_ICON_ROLES[role]),
 				activeText
 			);
 			
@@ -152,7 +140,7 @@ function A:DataBroker_OnEnter(parent)
 		end
 	end
 	
-	if(areSpecsUnlocked and (A.db.char.PreviousSpec == nil or A.db.char.PreviousSpec == 0)) then
+	if(areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
 		parent.tooltip:AddLine(string.format("|cffffdd00Left click a specialization to change to it.|r"));
 	end
 		
@@ -173,7 +161,7 @@ function A:DataBroker_OnEnter(parent)
 					activeText = "|cff00ff00Active|r";
 				end
 				
-				local lineIndex = parent.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+				local lineIndex = parent.tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), activeText);
 				
 				parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization(false, true)) then
@@ -193,9 +181,9 @@ function A:DataBroker_OnEnter(parent)
 	parent.tooltip:AddLine("|cff00ff00Left click|r  Toggle FlashTalent.");
 	
 	if(areSpecsUnlocked) then
-		if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
-			local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
+		if(Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
+			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
+			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	end
 	
@@ -204,15 +192,8 @@ function A:DataBroker_OnEnter(parent)
 	parent.tooltip:SetAutoHideDelay(0.25, parent);
 	parent.tooltip.OnRelease = function()
 		parent.tooltip = nil;
-		A.DataBrokerTooltip = nil;
+		Addon.DataBrokerTooltip = nil;
 	end
 	
 	parent.tooltip:Show();
-end
-
-function A:DataBroker_OnLeave(parent)
-	if(parent.tooltip and parent.tooltip:IsVisible()) then
-		-- LibQTip:Release(parent.tooltip);
-		-- parent.tooltip = nil;
-	end
 end

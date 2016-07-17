@@ -294,7 +294,6 @@
 					</OnLoad>
 					<OnClick function="FlashTalentSpecButton_OnClick"/>
 					<OnEnter function="FlashTalentSpecButton_OnEnter"/>
-					<OnLeave function="FlashTalentSpecButton_OnLeave"/>
 				</Scripts>
 			</Button>
 			

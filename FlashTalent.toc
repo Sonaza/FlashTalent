@@ -16,6 +16,11 @@ libs\LibQTip-1.0\LibQTip-1.0.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 #@end-no-lib-strip@
 
+globals.lua
 core.lua
 databroker.lua
+specializations.lua
+equipment.lua
+settings.lua
+
 Frame.xml
