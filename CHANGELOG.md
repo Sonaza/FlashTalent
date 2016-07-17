@@ -15,7 +15,6 @@
   * Added option to disable Blizzard alert about unspent talent points.
 
 ## 1.2.0
-
 * Added options menu with various options:
   * Always displaying tooltips when hovering talents and glyphs.
   * Keep window open at all times, even while in combat.
