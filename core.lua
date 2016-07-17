@@ -1787,12 +1787,12 @@ function A:GetMenuData()
 				},
 				{
 					text = "To the right",
-					func = function() self.db.global.AnchorSide = "RIGHT"; A:UpdateFrame(); end,
+					func = function() self.db.global.AnchorSide = "RIGHT"; A:UpdateFrame(); CloseMenus(); end,
 					checked = function() return self.db.global.AnchorSide == "RIGHT"; end,
 				},
 				{
 					text = "To the left",
-					func = function() self.db.global.AnchorSide = "LEFT"; A:UpdateFrame(); end,
+					func = function() self.db.global.AnchorSide = "LEFT"; A:UpdateFrame(); CloseMenus(); end,
 					checked = function() return self.db.global.AnchorSide == "LEFT"; end,
 				},
 			},
@@ -1812,7 +1812,7 @@ end
 
 function A:OpenContextMenu(parentframe)
 	if(not A.ContextMenu) then
-		A.ContextMenu = CreateFrame("Frame", ADDON_NAME .. "ContextMenuFrame", parentframe, "UIDropDownMenuTemplate");
+		A.ContextMenu = CreateFrame("Frame", "FlashTalentContextMenuFrame", parentframe, "UIDropDownMenuTemplate");
 	end
 	
 	A.ContextMenu:SetPoint("BOTTOM", parentframe, "CENTER", 0, 5);
@@ -1825,4 +1825,6 @@ function A:OpenContextMenu(parentframe)
 	elseif(self.db.global.AnchorSide == "LEFT") then
 		DropDownList1:SetPoint("TOPRIGHT", parentframe, "TOPLEFT", 1, 0);
 	end
+	
+	DropDownList1:SetClampedToScreen(true);
 end
