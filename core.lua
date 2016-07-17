@@ -1171,7 +1171,7 @@ function A:UpdatePVETalentCooldowns()
 	for tier = 1, 7 do
 		local tierIsOnCooldown = false;
 		
-		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
 		
 		local isUnlocked = (playerLevel >= tierLevels[tier]);
 		if(not isUnlocked) then
@@ -1238,7 +1238,7 @@ function A:UpdatePVPTalentCooldowns()
 	for tier = 2, 7 do
 		local tierIsOnCooldown = false;
 		
-		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
 		
 		tierFrame.lockFade:Hide();
 		
@@ -1304,7 +1304,7 @@ end
 
 function A:HighlightTalent(highlightTier, highlightColumn)
 	for column = 1, 3 do
-		local buttonName = string.format("FlashTalentFrameTier%dTalent%d", highlightTier, column);
+		local buttonName = string.format("FlashTalentFrameTalentsTier%dTalent%d", highlightTier, column);
 		local button = _G[buttonName];
 		
 		if(button) then
@@ -1364,8 +1364,8 @@ end
 function A:UpdatePVETalentFrame()
 	if(InCombatLockdown()) then return end
 	
-	FlashTalentFrameTier1:Show();
-	FlashTalentFrameHonorLevel:Hide();
+	FlashTalentFrameTalentsTier1:Show();
+	FlashTalentFrameTalentsHonorLevel:Hide();
 	
 	local group = GetActiveSpecGroup();
 	
@@ -1377,7 +1377,7 @@ function A:UpdatePVETalentFrame()
 	for tier = 1, 7 do
 		A:HighlightTalent(tier, -1);
 		
-		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
 		tierFrame.glowFrame:Hide();
 		
 		local isUnlocked = (playerLevel >= tierLevels[tier]);
@@ -1447,12 +1447,12 @@ end
 function A:UpdatePVPTalentFrame()
 	if(InCombatLockdown()) then return end
 	
-	FlashTalentFrameTier1:Hide();
+	FlashTalentFrameTalentsTier1:Hide();
 	
 	local honorLevel = UnitHonorLevel("player");
 	
-	FlashTalentFrameHonorLevel.text:SetText(string.format("|cffffdd00Level|r %s", honorLevel));
-	FlashTalentFrameHonorLevel:Show();
+	FlashTalentFrameTalentsHonorLevel.text:SetText(string.format("|cffffdd00Level|r %s", honorLevel));
+	FlashTalentFrameTalentsHonorLevel:Show();
 	
 	local group = GetActiveSpecGroup();
 	
@@ -1462,7 +1462,7 @@ function A:UpdatePVPTalentFrame()
 	for tier = 2, 7 do
 		A:HighlightTalent(tier, -1, true);
 		
-		local tierFrame = _G[string.format("FlashTalentFrameTier%d", tier)];
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
 		tierFrame.glowFrame:Hide();
 		
 		for column = 1, 3 do
@@ -1663,9 +1663,9 @@ function FlashTalentFrameSettingsButton_OnEnter(self)
 	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE");
 	
 	if(A.db.global.AnchorSide == "RIGHT") then
-		GameTooltip:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", 2, 6);
+		GameTooltip:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", 2, 0);
 	elseif(A.db.global.AnchorSide == "LEFT") then
-		GameTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -2, 6);
+		GameTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -2, 0);
 	end
 	
 	GameTooltip:AddLine("FlashTalent Pro Tips")
@@ -1700,15 +1700,22 @@ function A:UpdateFrame()
 	end
 	
 	if(self.db.global.AnchorSide == "RIGHT") then
-		FlashTalentFrameTabs:ClearAllPoints();
-		FlashTalentFrameTabs:SetPoint("TOPLEFT", FlashTalentFrameTier2, "TOPRIGHT", 4, 36);
+		FlashTalentFrameTalents:ClearAllPoints();
+		FlashTalentFrameTalents:SetPoint("TOPLEFT", FlashTalentFrame, "TOPLEFT", 0, -22);
 		
-		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", -5, 0);
+		FlashTalentFrameTabs:ClearAllPoints();
+		FlashTalentFrameTabs:SetPoint("TOPLEFT", FlashTalentFrameTalents, "TOPRIGHT", 2, 0);
+		
+		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", -6, -3);
+		
 	elseif(self.db.global.AnchorSide == "LEFT") then
-		FlashTalentFrameTabs:ClearAllPoints();
-		FlashTalentFrameTabs:SetPoint("TOPRIGHT", FlashTalentFrameTier2, "TOPLEFT", -4, 36);
+		FlashTalentFrameTalents:ClearAllPoints();
+		FlashTalentFrameTalents:SetPoint("TOPRIGHT", FlashTalentFrame, "TOPRIGHT", 0, -22);
 		
-		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 6, 0);
+		FlashTalentFrameTabs:ClearAllPoints();
+		FlashTalentFrameTabs:SetPoint("TOPRIGHT", FlashTalentFrameTalents, "TOPLEFT", -2, 0);
+		
+		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 7, -3);
 	end
 	
 	FlashTalentFrame:SetScale(self.db.global.WindowScale);

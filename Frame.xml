@@ -170,26 +170,88 @@
 	</Button>
 
 	<Frame name="FlashTalentFrame" parent="UIParent" hidden="true" movable="true" clampedToScreen="true" frameStrata="MEDIUM">
-		<Size x="106" y="242"/>
+		<Size x="154" y="264"/>
 		<Anchors>
 			<Anchor point="CENTER" x="180" y="0"/>
 		</Anchors>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture>
-					<Anchors>
-						<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
-						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="0" y="0"/>
-					</Anchors>
-					<Color r="0" g="0" b="0" a="0.8"/>
-				</Texture>
-			</Layer>
-		</Layers>
 		<Frames>
+			<Frame name="$parentTalents">
+				<Size x="106" y="242"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="-22"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture>
+							<Anchors>
+								<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+								<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="0" y="0"/>
+							</Anchors>
+							<Color r="0" g="0" b="0" a="0.8"/>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Frames>
+					<Frame name="$parentTier1" id="1" parentKey="tier1" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parent" x="2" y="-2"/>
+						</Anchors>
+					</Frame>
+					
+					<Frame name="$parentHonorLevel" parentKey="honorLevel" hidden="true">
+						<Size x="106" y="34"/>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+						</Anchors>
+						<Layers>
+							<Layer level="ARTWORK">
+								<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
+									<Size x="102" y="42"/>
+									<Anchors>
+										<Anchor point="CENTER" x="0" y="-2"/>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+					</Frame>
+					
+					<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="2" y="-36"/>
+						</Anchors>
+					</Frame>
+					<Frame name="$parentTier3" id="3" parentKey="tier3" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier2" x="0" y="0"/>
+						</Anchors>
+					</Frame>
+					<Frame name="$parentTier4" id="4" parentKey="tier4" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier3" x="0" y="0"/>
+						</Anchors>
+					</Frame>
+					<Frame name="$parentTier5" id="5" parentKey="tier5" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier4" x="0" y="0"/>
+						</Anchors>
+					</Frame>
+					<Frame name="$parentTier6" id="6" parentKey="tier6" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier5" x="0" y="0"/>
+						</Anchors>
+					</Frame>
+					<Frame name="$parentTier7" id="7" parentKey="tier7" inherits="FlashTalentTierTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier6" x="0" y="0"/>
+						</Anchors>
+					</Frame>
+				</Frames>
+			</Frame>
+			
 			<Button name="$parentReagents" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
 				<Size x="55" y="20"/>
 				<Anchors>
-					<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="2"/>
+					<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parentTalents" x="0" y="2"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK">
@@ -210,9 +272,10 @@
 					<PreClick function="FlashTalentReagentFrame_PreClick"/>
 				</Scripts>
 			</Button>
+			
 			<Button name="FlashTalentSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
 				<Anchors>
-					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="4" y="0"/>
+					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parentTalents" x="3" y="0"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">
@@ -235,64 +298,10 @@
 				</Scripts>
 			</Button>
 			
-			<Frame name="$parentTier1" id="1" parentKey="tier1" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parent" x="2" y="-2"/>
-				</Anchors>
-			</Frame>
-			
-			<Frame name="$parentHonorLevel" parentKey="honorLevel" hidden="true">
-				<Size x="106" y="34"/>
-				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
-				</Anchors>
-				<Layers>
-					<Layer level="ARTWORK">
-						<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
-							<Size x="102" y="42"/>
-							<Anchors>
-								<Anchor point="CENTER" x="0" y="-2"/>
-							</Anchors>
-						</FontString>
-					</Layer>
-				</Layers>
-			</Frame>
-			
-			<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="2" y="-36"/>
-				</Anchors>
-			</Frame>
-			<Frame name="$parentTier3" id="3" parentKey="tier3" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier2" x="0" y="0"/>
-				</Anchors>
-			</Frame>
-			<Frame name="$parentTier4" id="4" parentKey="tier4" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier3" x="0" y="0"/>
-				</Anchors>
-			</Frame>
-			<Frame name="$parentTier5" id="5" parentKey="tier5" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier4" x="0" y="0"/>
-				</Anchors>
-			</Frame>
-			<Frame name="$parentTier6" id="6" parentKey="tier6" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier5" x="0" y="0"/>
-				</Anchors>
-			</Frame>
-			<Frame name="$parentTier7" id="7" parentKey="tier7" inherits="FlashTalentTierTemplate">
-				<Anchors>
-					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier6" x="0" y="0"/>
-				</Anchors>
-			</Frame>
-			
 			<Frame name="$parentTabs" parentKey="tabs" clampedToScreen="true">
-				<Size x="42" y="242"/>
+				<Size x="44" y="242"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier2" x="4" y="36"/>
+					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTalents" x="2" y="0"/>
 				</Anchors>
 				<Frames>
 					<Button name="$parentPVETalents" id="1" parentKey="pvetalents" inherits="FlashTalentTabButtonTemplate">
@@ -310,7 +319,7 @@
 			
 			<Button name="$parentSettingsButton" inherits="BrowserButtonTemplate">
 				<Anchors>
-					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parentTabs" x="0" y="2"/>
+					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parentTabs" x="0" y="0"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">
