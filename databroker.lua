@@ -174,14 +174,14 @@ function A:DataBroker_OnEnter(parent)
 	
 	parent.tooltip:AddLine(" ");
 	
-	parent.tooltip:AddLine("|cff00ff00Left-click|r  Toggle FlashTalent");
+	parent.tooltip:AddLine("|cff00ff00Left click|r  Toggle FlashTalent");
 	
 	if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
 		local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-		parent.tooltip:AddLine(string.format("|cff00ff00Middle-click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
+		parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
 	end
 	
-	parent.tooltip:AddLine("|cff00ff00Right-click|r  View equipment sets");
+	parent.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets");
 	
 	parent.tooltip:SetAutoHideDelay(0.25, parent);
 	parent.tooltip:Show();

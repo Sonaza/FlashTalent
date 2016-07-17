@@ -305,7 +305,7 @@ function FlashTalentTabButton_OnEnter(self)
 	if(tabID == 1) then -- PVE tab
 		GameTooltip:AddLine("Class Talents");
 		GameTooltip:AddLine("|cffffffffView to class talents.");
-		GameTooltip:AddLine("|cff00ff00Right-click|r  Open talent panel.");
+		GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 		
 		if(GetNumUnspentTalents() > 0) then
 			GameTooltip:AddLine(" ");
@@ -315,7 +315,7 @@ function FlashTalentTabButton_OnEnter(self)
 	elseif(tabID == 2) then -- PVP Tab
 		GameTooltip:AddLine("Honor Talents");
 		GameTooltip:AddLine("|cffffffffView to honor talents.|r");
-		GameTooltip:AddLine("|cff00ff00Right-click|r  Open talent panel.");
+		GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 		
 		GameTooltip:AddLine(" ");
 		
@@ -668,10 +668,10 @@ function FlashTalentSpecButton_OnEnter(self)
 	
 	if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
 		local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-		self.tooltip:AddLine(string.format("|cff00ff00Left-click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
+		self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
 	end
 	
-	self.tooltip:AddLine("|cff00ff00Right-click|r  View equipment sets");
+	self.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets");
 	
 	self.tooltip:SetAutoHideDelay(0.35, self);
 	self.tooltip:Show();
@@ -774,16 +774,16 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 				GameTooltip:SetOwner(self, "ANCHOR_LEFT");
 				GameTooltip:SetEquipmentSet(name);
 				GameTooltip:AddLine(" ");
-				GameTooltip:AddLine("Left-click  |cffffffffSwitch to this set", 0, 1, 0);
-				GameTooltip:AddLine("Right-click  |cffffffffRename the set", 0, 1, 0);
+				GameTooltip:AddLine("Left click  |cffffffffSwitch to this set", 0, 1, 0);
+				GameTooltip:AddLine("Right click  |cffffffffRename the set", 0, 1, 0);
 				GameTooltip:AddLine("Shift Middle click  |cffffffffUpdate set", 0, 1, 0);
 				GameTooltip:AddLine(" ");
 				
 				if(not specSets[name] or specSets[name] ~= GetActiveSpecGroup()) then
 					local _, specName, _, specIcon = GetSpecializationInfo(GetSpecialization());
-					GameTooltip:AddLine(string.format("Ctrl Shift Right-click  |cffffffffTag this set for |cffffffff%s %s|r", ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
+					GameTooltip:AddLine(string.format("Ctrl Shift Right click  |cffffffffTag this set for |cffffffff%s %s|r", ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
 				else
-					GameTooltip:AddLine("Ctrl Shift Right-click  |cffffffffRemove spec tag from this set", 0, 1, 0);
+					GameTooltip:AddLine("Ctrl Shift Right click  |cffffffffRemove spec tag from this set", 0, 1, 0);
 				end
 				
 				GameTooltip:Show();
@@ -845,7 +845,7 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffdd00Ctrl Shift Right-click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
+		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffdd00Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
 		
 		GameTooltip:Show();
 	end);
@@ -1499,7 +1499,7 @@ function FlashTalentReagentFrame_OnEnter(self)
 	GameTooltip:AddLine(" ");
 	
 	local clicks = {
-		"Left-click", "Right-click"
+		"Left click", "Right click"
 	};
 	
 	local reagents = A:GetTalentClearInfo();
@@ -1577,7 +1577,7 @@ function FlashTalentFrameSettingsButton_OnEnter(self)
 	end
 	
 	GameTooltip:AddLine("FlashTalent Pro Tips")
-	GameTooltip:AddLine("Switch talents by hovering the one you wish to change to and |cff00ff00left-click|r it.", 1, 1, 1, true);
+	GameTooltip:AddLine("Switch talents by hovering the one you wish to change to and |cff00ff00left click|r it.", 1, 1, 1, true);
 	GameTooltip:AddLine(" ");
 	GameTooltip:AddLine("You can switch between class and honor talents by clicking the circles next to talent rows.", 1, 1, 1, true);
 	GameTooltip:AddLine(" ");
