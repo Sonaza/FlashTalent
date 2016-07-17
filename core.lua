@@ -260,6 +260,10 @@ end
 function A:OpenTalentTab(tabIndex)
 	if(tabIndex ~= 1 and tabIndex ~= 2) then return end
 	
+	if(tabIndex == 2 and UnitLevel("player") < SHOW_PVP_TALENT_LEVEL) then
+		tabIndex = 1;
+	end
+	
 	A.CurrentTalentTab = tabIndex;
 	A.db.char.OpenTalentTab = A.CurrentTalentTab;
 	
@@ -299,42 +303,54 @@ function FlashTalentTabButton_OnEnter(self)
 	
 	A:HideSpecButtonTooltip();
 	
+	local level = UnitLevel("player");
+	
 	local tabID = self:GetID();
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	
 	if(tabID == 1) then -- PVE tab
 		GameTooltip:AddLine("Class Talents");
-		GameTooltip:AddLine("|cffffffffView to class talents.");
-		GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 		
-		if(GetNumUnspentTalents() > 0) then
-			GameTooltip:AddLine(" ");
-			GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentTalents(), GetNumUnspentTalents() == 1 and "" or "s"));
+		if(level >= SHOW_TALENT_LEVEL) then
+			GameTooltip:AddLine("|cffffffffView to class talents.");
+			GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
+		
+			if(GetNumUnspentTalents() > 0) then
+				GameTooltip:AddLine(" ");
+				GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentTalents(), GetNumUnspentTalents() == 1 and "" or "s"));
+			end
+		else
+			GameTooltip:AddLine(string.format("|cffffffffClass talents unlock at level %d.", SHOW_TALENT_LEVEL));
 		end
 		
 	elseif(tabID == 2) then -- PVP Tab
 		GameTooltip:AddLine("Honor Talents");
-		GameTooltip:AddLine("|cffffffffView to honor talents.|r");
-		GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 		
-		GameTooltip:AddLine(" ");
-		
-		local honorlevel = UnitHonorLevel("player");
-		local honorlevelmax = GetMaxPlayerHonorLevel();
-		
-		if(honorlevel < honorlevelmax) then
-			GameTooltip:AddLine(string.format("Honor Level  |cffffffff%d / %d|r", honorlevel, honorlevelmax));
-		else
-			GameTooltip:AddLine("Max Honor Level Reached!");
-		end
-		
-		if(CanPrestige()) then
-			GameTooltip:AddLine("|cff22ccffPrestige available!|r");
-		end
-		
-		if(GetNumUnspentPvpTalents() > 0) then
+		if(level >= SHOW_PVP_TALENT_LEVEL) then
+			GameTooltip:AddLine("|cffffffffView to honor talents.|r");
+			GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
+			
 			GameTooltip:AddLine(" ");
-			GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentPvpTalents(), GetNumUnspentPvpTalents() == 1 and "" or "s"));
+			
+			local honorlevel = UnitHonorLevel("player");
+			local honorlevelmax = GetMaxPlayerHonorLevel();
+			
+			if(honorlevel < honorlevelmax) then
+				GameTooltip:AddLine(string.format("Honor Level  |cffffffff%d / %d|r", honorlevel, honorlevelmax));
+			else
+				GameTooltip:AddLine("Max Honor Level Reached!");
+			end
+			
+			if(CanPrestige()) then
+				GameTooltip:AddLine("|cff22ccffPrestige available!|r");
+			end
+			
+			if(GetNumUnspentPvpTalents() > 0) then
+				GameTooltip:AddLine(" ");
+				GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentPvpTalents(), GetNumUnspentPvpTalents() == 1 and "" or "s"));
+			end
+		else
+			GameTooltip:AddLine(string.format("|cffffffffHonor talents unlock at level %d.", SHOW_PVP_TALENT_LEVEL));
 		end
 	end
 	
@@ -358,7 +374,7 @@ function A:UpdateTabIcons()
 		pvetab.icon:SetTexCoord(0, 1, 0, 1);
 	else
 		local _, class = UnitClass("player");
-		pvetab.icon:SetTexture("Interface\\TargetingFrame\\UI classes-Circles");
+		pvetab.icon:SetTexture("Interface\\TargetingFrame\\UI-classes-Circles");
 		pvetab.icon:SetTexCoord(unpack(CLASS_ICON_TCOORDS[strupper(class)]));
 	end
 	
@@ -461,15 +477,19 @@ function A:RestorePosition()
 	end
 end
 
-function A:ToggleFrame(tab)
+function A:ToggleFrame(tabIndex)
 	if(InCombatLockdown()) then return end
 	
-	local tab = tab or A.CurrentTalentTab;
+	local tabIndex = tabIndex or A.CurrentTalentTab;
 	
-	if(not FlashTalentFrame:IsVisible() or A.CurrentTalentTab ~= tab) then
+	if(tabIndex == 2 and UnitLevel("player") < SHOW_PVP_TALENT_LEVEL) then
+		tabIndex = 1;
+	end
+	
+	if(not FlashTalentFrame:IsVisible() or A.CurrentTalentTab ~= tabIndex) then
 		A:RestorePosition();
 		FlashTalentFrame:Show();
-		A:OpenTalentTab(tab);
+		A:OpenTalentTab(tabIndex);
 	else
 		FlashTalentFrame:Hide();
 	end
@@ -519,7 +539,7 @@ function A:ACTIVE_TALENT_GROUP_CHANGED()
 	
 	A:UpdateTalentFrame();
 	
-	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible()) then
+	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and FlashTalentSpecButton.tooltip.category == 1) then
 		FlashTalentSpecButton_OnEnter(FlashTalentSpecButton);
 	end
 	
@@ -607,6 +627,10 @@ function FlashTalentSpecButton_OnEnter(self)
 	self.tooltip:ClearAllPoints();
 	self.tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, -2);
 	
+	self.tooltip.category = 1;
+	
+	local areSpecsUnlocked = UnitLevel("player") >= SHOW_SPEC_LEVEL;
+	
 	self.tooltip:AddHeader("|cffffdd00Specializations|r");
 	self.tooltip:AddSeparator();
 	
@@ -616,64 +640,83 @@ function FlashTalentSpecButton_OnEnter(self)
 		local color = "|cffeeeeee";
 		local activeText = "";
 		
-		if(specIndex == GetSpecialization()) then
+		local isActiveSpecialization = (specIndex == GetSpecialization());
+		
+		if(isActiveSpecialization) then
 			activeText = "|cff00ff00Active|r";
 		end
 		
-		if(specIndex == GetSpecialization() or specIndex == A.db.char.PreviousSpec) then
+		if(isActiveSpecialization or specIndex == A.db.char.PreviousSpec) then
 			color = "|cff8ce2ff";
 		end
 		
-		local lineIndex = self.tooltip:AddLine(
-			string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
-			activeText
-		);
-		
-		self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
-			if(specIndex ~= GetSpecialization()) then
-				SetSpecialization(specIndex);
-				A:HideSpecButtonTooltip();
+		if(areSpecsUnlocked or isActiveSpecialization) then
+			local lineIndex = self.tooltip:AddLine(
+				string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
+				activeText
+			);
+			
+			if(areSpecsUnlocked) then
+				self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+					if(specIndex ~= GetSpecialization()) then
+						SetSpecialization(specIndex);
+						A:HideSpecButtonTooltip();
+					end
+				end);
 			end
-		end);
-	end
-	
-	local _, class = UnitClass("player");
-	local petname = UnitName("pet");
-	if(class == "HUNTER" and petname) then
-		self.tooltip:AddLine(" ");
-		self.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
-		self.tooltip:AddSeparator();
-		
-		for specIndex = 1, GetNumSpecializations(false, true) do
-			local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
-			
-			local activeText = "";
-			
-			if(specIndex == GetSpecialization(false, true)) then
-				activeText = "|cff00ff00Active|r";
-			end
-			
-			local lineIndex = self.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
-			
-			self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
-				if(specIndex ~= GetSpecialization(false, true)) then
-					SetSpecialization(specIndex, true);
-					-- A:HideSpecButtonTooltip();
-				end
-			end);
 		end
 	end
 	
-	self.tooltip:AddLine(" ");
-	
-	if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
-		local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-		self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
+	if(areSpecsUnlocked and (A.db.char.PreviousSpec == nil or A.db.char.PreviousSpec == 0)) then
+		self.tooltip:AddLine(string.format("|cffffdd00Left click a specialization to change to it.|r"));
 	end
 	
-	self.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets");
+	if(areSpecsUnlocked) then
+		local _, class = UnitClass("player");
+		local petname = UnitName("pet");
+		if(class == "HUNTER" and petname) then
+			self.tooltip:AddLine(" ");
+			self.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
+			self.tooltip:AddSeparator();
+			
+			for specIndex = 1, GetNumSpecializations(false, true) do
+				local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+				
+				local activeText = "";
+				
+				if(specIndex == GetSpecialization(false, true)) then
+					activeText = "|cff00ff00Active|r";
+				end
+				
+				local lineIndex = self.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+				
+				self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+					if(specIndex ~= GetSpecialization(false, true)) then
+						SetSpecialization(specIndex, true);
+					end
+				end);
+			end
+		end
+	end
+	
+	if(areSpecsUnlocked) then
+		self.tooltip:AddLine(" ");
+		if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
+			local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
+			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s.", name, ROLES[role]:format(ICON_ROLES)));
+		end
+	else
+		self.tooltip:AddLine(string.format("|cffffdd00Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
+		self.tooltip:AddLine(" ");
+	end
+	
+	self.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
 	
 	self.tooltip:SetAutoHideDelay(0.35, self);
+	self.tooltip.OnRelease = function()
+		self.tooltip = nil;
+	end
+	
 	self.tooltip:Show();
 end
 
@@ -735,6 +778,7 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	
 	tooltip = LibQTip:Acquire("FlashTalentSpecButtonTooltip", 2, "LEFT", "RIGHT");
 	FlashTalentSpecButton.tooltip = tooltip;
+	FlashTalentSpecButton.tooltip.category = 2;
 	
 	tooltip:Clear();
 	tooltip:AddHeader("|cffffdd00Equipment Sets|r");
@@ -1313,7 +1357,7 @@ function A:UpdatePVETalentFrame()
 				IconSetColor(button.icon, TALENT_COLOR_CANLEARN);
 			end
 			
-			if(isFree) then
+			if(isFree and isUnlocked) then
 				tierFrame.glowFrame:Show();
 			end
 			

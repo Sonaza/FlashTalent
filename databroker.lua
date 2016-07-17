@@ -106,7 +106,7 @@ local ROLES = {
 function A:DataBroker_OnEnter(parent)
 	A:HideSpecButtonTooltip();
 	
-	parent.tooltip = LibQTip:Acquire("FlashTalentSpecButtonDataBrokerTooltip", 2, "LEFT", "RIGHT");
+	parent.tooltip = LibQTip:Acquire("FlashTalentDataBrokerTooltip", 2, "LEFT", "RIGHT");
 	A.DataBrokerTooltip = parent.tooltip;
 	
 	local point, relativePoint, offset = A:GetVerticalAnchors(parent);
@@ -114,6 +114,8 @@ function A:DataBroker_OnEnter(parent)
 	parent.tooltip:Clear();
 	parent.tooltip:ClearAllPoints();
 	parent.tooltip:SetPoint(point, parent, relativePoint, 0, offset);
+	
+	local areSpecsUnlocked = UnitLevel("player") >= SHOW_SPEC_LEVEL;
 	
 	parent.tooltip:AddHeader("|cffffdd00Specializations|r");
 	parent.tooltip:AddSeparator();
@@ -124,66 +126,88 @@ function A:DataBroker_OnEnter(parent)
 		local color = "|cffeeeeee";
 		local activeText = "";
 		
-		if(specIndex == GetSpecialization()) then
+		local isActiveSpecialization = (specIndex == GetSpecialization());
+		
+		if(isActiveSpecialization) then
 			activeText = "|cff00ff00Active|r";
 		end
 		
-		if(specIndex == GetSpecialization() or specIndex == A.db.char.PreviousSpec) then
+		if(isActiveSpecialization or specIndex == A.db.char.PreviousSpec) then
 			color = "|cff8ce2ff";
 		end
 		
-		local lineIndex = parent.tooltip:AddLine(
-			string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
-			activeText
-		);
-		
-		parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(parent, _, button)
-			if(specIndex ~= GetSpecialization()) then
-				SetSpecialization(specIndex);
-				A:HideSpecButtonTooltip();
+		if(areSpecsUnlocked or isActiveSpecialization) then
+			local lineIndex = parent.tooltip:AddLine(
+				string.format("%s %s%s|r %s", ICON_PATTERN:format(icon), color, name, ROLES[role]:format(ICON_ROLES)),
+				activeText
+			);
+			
+			if(areSpecsUnlocked) then
+				parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+					if(specIndex ~= GetSpecialization()) then
+						SetSpecialization(specIndex);
+						A:HideSpecButtonTooltip();
+					end
+				end);
 			end
-		end);
+		end
 	end
 	
-	local _, class = UnitClass("player");
-	local petname = UnitName("pet");
-	if(class == "HUNTER" and petname) then
-		parent.tooltip:AddLine(" ");
-		parent.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
-		parent.tooltip:AddSeparator();
+	if(areSpecsUnlocked and (A.db.char.PreviousSpec == nil or A.db.char.PreviousSpec == 0)) then
+		parent.tooltip:AddLine(string.format("|cffffdd00Left click a specialization to change to it.|r"));
+	end
 		
-		for specIndex = 1, GetNumSpecializations(false, true) do
-			local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+	if(areSpecsUnlocked) then
+		local _, class = UnitClass("player");
+		local petname = UnitName("pet");
+		if(class == "HUNTER" and petname) then
+			parent.tooltip:AddLine(" ");
+			parent.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
+			parent.tooltip:AddSeparator();
 			
-			local activeText = "";
-			
-			if(specIndex == GetSpecialization(false, true)) then
-				activeText = "|cff00ff00Active|r";
-			end
-			
-			local lineIndex = parent.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
-			
-			parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(parent, _, button)
-				if(specIndex ~= GetSpecialization(false, true)) then
-					SetSpecialization(specIndex, true);
-					-- A:HideSpecButtonTooltip();
+			for specIndex = 1, GetNumSpecializations(false, true) do
+				local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+				
+				local activeText = "";
+				
+				if(specIndex == GetSpecialization(false, true)) then
+					activeText = "|cff00ff00Active|r";
 				end
-			end);
+				
+				local lineIndex = parent.tooltip:AddLine(string.format("%s %s", ICON_PATTERN:format(icon), name), activeText);
+				
+				parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+					if(specIndex ~= GetSpecialization(false, true)) then
+						SetSpecialization(specIndex, true);
+					end
+				end);
+			end
 		end
+	end
+	
+	if(not areSpecsUnlocked) then
+		parent.tooltip:AddLine(string.format("|cffffdd00Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
 	end
 	
 	parent.tooltip:AddLine(" ");
 	
-	parent.tooltip:AddLine("|cff00ff00Left click|r  Toggle FlashTalent");
+	parent.tooltip:AddLine("|cff00ff00Left click|r  Toggle FlashTalent.");
 	
-	if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
-		local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-		parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
+	if(areSpecsUnlocked) then
+		if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
+			local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
+			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s.", name, ROLES[role]:format(ICON_ROLES)));
+		end
 	end
 	
-	parent.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets");
+	parent.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
 	
 	parent.tooltip:SetAutoHideDelay(0.25, parent);
+	parent.tooltip.OnRelease = function()
+		parent.tooltip = nil;
+		A.DataBrokerTooltip = nil;
+	end
+	
 	parent.tooltip:Show();
 end
 
