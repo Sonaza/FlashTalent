@@ -170,7 +170,7 @@
 	</Button>
 
 	<Frame name="FlashTalentFrame" parent="UIParent" hidden="true" movable="true" clampedToScreen="true" frameStrata="MEDIUM">
-		<Size x="152" y="242"/>
+		<Size x="106" y="242"/>
 		<Anchors>
 			<Anchor point="CENTER" x="180" y="0"/>
 		</Anchors>
@@ -179,7 +179,7 @@
 				<Texture>
 					<Anchors>
 						<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
-						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-46" y="0"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="0" y="0"/>
 					</Anchors>
 					<Color r="0" g="0" b="0" a="0.8"/>
 				</Texture>
@@ -212,7 +212,7 @@
 			</Button>
 			<Button name="FlashTalentSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
 				<Anchors>
-					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="-53" y="0"/>
+					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="4" y="0"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">
@@ -289,7 +289,7 @@
 				</Anchors>
 			</Frame>
 			
-			<Frame name="$parentTabs" parentKey="tabs">
+			<Frame name="$parentTabs" parentKey="tabs" clampedToScreen="true">
 				<Size x="42" y="242"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTier2" x="4" y="36"/>
