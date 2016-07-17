@@ -155,7 +155,8 @@ end
 
 function A:OnEnable()
 	A:RegisterEvent("PLAYER_REGEN_DISABLED");
-	A:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
+	A:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+	A:RegisterEvent("PET_SPECIALIZATION_CHANGED");
 	
 	A:RegisterEvent("PLAYER_TALENT_UPDATE");
 	A:RegisterEvent("PLAYER_PVP_TALENT_UPDATE", "PLAYER_TALENT_UPDATE");
@@ -164,20 +165,29 @@ function A:OnEnable()
 		A:RegisterEvent("PLAYER_LEVEL_UP");
 	end
 	
-	A:RegisterEvent("SCENARIO_UPDATE");
-	A:RegisterEvent("CHALLENGE_MODE_START");
-	A:RegisterEvent("CHALLENGE_MODE_RESET");
-	A:RegisterEvent("CHALLENGE_MODE_COMPLETED", "CHALLENGE_MODE_RESET");
-	
 	A:RegisterEvent("UNIT_AURA");
 	A:RegisterEvent("BAG_UPDATE_DELAYED");
 	A:RegisterEvent("MODIFIER_STATE_CHANGED");
+	
+	A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
+	A:RegisterEvent("EQUIPMENT_SETS_CHANGED", "EQUIPMENT_SWAP_FINISHED");
 	
 	if(UnitFactionGroup("player") == "Neutral") then
 		A:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 	end
 	
+	local _, class = UnitClass("player");
+	if(class == "HUNTER") then
+		A:RegisterEvent("UNIT_PET");
+	end
+	
 	A:RegisterEvent("SPELL_UPDATE_USABLE");
+	
+	-- A:RegisterEvent("SCENARIO_UPDATE");
+	-- A:RegisterEvent("CHALLENGE_MODE_START");
+	-- A:RegisterEvent("CHALLENGE_MODE_RESET");
+	-- A:RegisterEvent("CHALLENGE_MODE_COMPLETED", "CHALLENGE_MODE_RESET");
+	
 	self.updaterFrame = CreateFrame("Frame");
 	self.updaterFrame:SetScript("OnUpdate", function(self, elapsed)
 		self.elapsed = (self.elapsed or 0) + elapsed;
@@ -199,9 +209,6 @@ function A:OnEnable()
 			TalentMicroButtonAlert:Hide();
 		end
 	end);
-	
-	A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
-	A:RegisterEvent("EQUIPMENT_SETS_CHANGED", "EQUIPMENT_SWAP_FINISHED");
 	
 	A.SecureFrameToggler = CreateFrame("Button", "FlashTalentFrameToggler", nil, "SecureActionButtonTemplate");
 	
@@ -530,14 +537,8 @@ function A:UNIT_AURA()
 	A:UpdateReagentCount();
 end
 
-function A:ACTIVE_TALENT_GROUP_CHANGED()
+function A:UpdateSpecTooltips()
 	if(InCombatLockdown()) then return end
-	
-	if(A.OldSpecialization ~= nil and A.OldSpecialization ~= 0) then
-		A.db.char.PreviousSpec = A.OldSpecialization;
-	end
-	
-	A:UpdateTalentFrame();
 	
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and FlashTalentSpecButton.tooltip.category == 1) then
 		FlashTalentSpecButton_OnEnter(FlashTalentSpecButton);
@@ -547,6 +548,26 @@ function A:ACTIVE_TALENT_GROUP_CHANGED()
 		local _, parent = A.DataBrokerTooltip:GetPoint()
 		A:DataBroker_OnEnter(parent);
 	end
+end
+
+function A:PET_SPECIALIZATION_CHANGED()
+	A:UpdateSpecTooltips();
+end
+
+function A:UNIT_PET()
+	A:UpdateSpecTooltips();
+end
+	
+function A:PLAYER_SPECIALIZATION_CHANGED(event, unit)
+	if(InCombatLockdown()) then return end
+	if(unit ~= "player") then return end
+	
+	if(A.OldSpecialization ~= nil and A.OldSpecialization ~= 0) then
+		A.db.char.PreviousSpec = A.OldSpecialization;
+	end
+	
+	A:UpdateTalentFrame();
+	A:UpdateSpecTooltips();
 	
 	if(self.db.char.AutoSwitchGearSet) then
 		local activeSpec = GetSpecialization();
@@ -660,7 +681,6 @@ function FlashTalentSpecButton_OnEnter(self)
 				self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization()) then
 						SetSpecialization(specIndex);
-						A:HideSpecButtonTooltip();
 					end
 				end);
 			end
@@ -703,7 +723,7 @@ function FlashTalentSpecButton_OnEnter(self)
 		self.tooltip:AddLine(" ");
 		if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
 			local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s.", name, ROLES[role]:format(ICON_ROLES)));
+			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
 		end
 	else
 		self.tooltip:AddLine(string.format("|cffffdd00Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
@@ -734,7 +754,7 @@ local function GetCheckButtonTexture(checked)
 end
 
 function A:EQUIPMENT_SWAP_FINISHED(event, success, setName)
-	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible()) then
+	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and FlashTalentSpecButton.tooltip.category == 2) then
 		A:RefreshItemSetsMenu(setName);
 	end
 	
@@ -765,6 +785,7 @@ end
 
 function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and not forceRefresh) then return end
+	if(FlashTalentSpecButton.tooltip.category ~= 2) then return end
 	
 	local tooltip;
 	local positionData = {};

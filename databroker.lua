@@ -146,7 +146,6 @@ function A:DataBroker_OnEnter(parent)
 				parent.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization()) then
 						SetSpecialization(specIndex);
-						A:HideSpecButtonTooltip();
 					end
 				end);
 			end
@@ -196,7 +195,7 @@ function A:DataBroker_OnEnter(parent)
 	if(areSpecsUnlocked) then
 		if(A.db.char.PreviousSpec ~= nil and A.db.char.PreviousSpec ~= 0) then
 			local _, name, _, _, _, role = GetSpecializationInfo(A.db.char.PreviousSpec, false, false);
-			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s.", name, ROLES[role]:format(ICON_ROLES)));
+			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, ROLES[role]:format(ICON_ROLES)));
 		end
 	end
 	
