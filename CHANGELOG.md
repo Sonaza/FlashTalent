@@ -13,6 +13,7 @@
   * Added new keybind option to directly open honor talents tab. The old keybind now directly opens class talents tab.
   * Added option to change window scale between 80% and 150%.
   * Added option to disable Blizzard alert about unspent talent points.
+  * Plenty of miscellaneous bug fixes and other minor changes.
 
 ## 1.2.0
 * Added options menu with various options:
