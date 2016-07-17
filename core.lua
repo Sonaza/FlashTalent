@@ -791,21 +791,16 @@ end
 
 function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and not forceRefresh) then return end
-	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip.category ~= 2) then return end
 	
-	local tooltip;
 	local positionData = {};
-	
-	if(forceRefresh and self.EquipmentTooltip) then
-		positionData = { self.EquipmentTooltip:GetPoint() };
-		
-		LibQTip:Release(self.EquipmentTooltip);
-		self.EquipmentTooltip = nil;
+	if(forceRefresh and FlashTalentSpecButton.tooltip) then
+		positionData = { FlashTalentSpecButton.tooltip:GetPoint() };
 	end
 	
-	tooltip = LibQTip:Acquire("FlashTalentSpecButtonTooltip", 2, "LEFT", "RIGHT");
-	FlashTalentSpecButton.tooltip = tooltip;
+	FlashTalentSpecButton.tooltip = LibQTip:Acquire("FlashTalentSpecButtonTooltip", 2, "LEFT", "RIGHT");
 	FlashTalentSpecButton.tooltip.category = 2;
+	
+	local tooltip = FlashTalentSpecButton.tooltip;
 	
 	tooltip:Clear();
 	tooltip:AddHeader("|cffffdd00Equipment Sets|r");
@@ -953,6 +948,9 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	end);
 	
 	tooltip:SetAutoHideDelay(0.5, anchorFrame);
+	FlashTalentSpecButton.tooltip.OnRelease = function()
+		FlashTalentSpecButton.tooltip = nil;
+	end
 	
 	tooltip:ClearAllPoints();
 	
