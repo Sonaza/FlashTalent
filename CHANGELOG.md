@@ -4,7 +4,7 @@
   * Added support for Honor talents.
   * You can change between class and honor talents using new tabs next to the talents.
   * Removed glyph support since Legion glyphs are only minor and have mostly one-time use cases. Rest in peace.
-  * Changed specializations tooltip to allow changing to any available specialization by clicking them on the list
+  * Changed specializations tooltips to allow changing to any available specialization by clicking them on the list.
     * To counter the removal of dual spec, FlashTalent now tracks what specializations you used last and will allow you to quick change back to the previously used specialization via the specialization button and the optional keybind.
     * Added support for hunter pet specializations.
   * Updated reagent listing to display number of the tomes and the codices instead.
