@@ -861,21 +861,23 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			
 			tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 				if(IsShiftKeyDown() and IsControlKeyDown() and button == "RightButton") then
-					local activeSpec = GetActiveSpecGroup();
+					local activeSpec = GetSpecialization();
 					if(A.db.char.SpecSets[activeSpec] == name) then
 						A.db.char.SpecSets[activeSpec] = nil;
 					else
 						A.db.char.SpecSets[activeSpec] = name;
 						
-						local inactiveSpec = 3-activeSpec;
-						if(A.db.char.SpecSets[inactiveSpec] == name) then
-							A.db.char.SpecSets[inactiveSpec] = nil;
+						for specIndex, setName in pairs(A.db.char.SpecSets) do
+							if(specIndex ~= activeSpec and setName == name) then
+								A.db.char.SpecSets[specIndex] = nil;
+							end
 						end
 					end
 					
 					A:RefreshItemSetsMenu();
 				elseif(IsShiftKeyDown() and button == "MiddleButton") then
 					A:UpdateEquipmentSet(name);
+					
 				elseif(button == "RightButton") then
 					local icon, setID = GetEquipmentSetInfoByName(name);
 					icon = "Interface\\Icons\\" .. icon;
@@ -883,6 +885,7 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 					StaticPopup_Show("FLASHTALENT_RENAME_EQUIPMENT_SET", string.format("%s %s", ICON_PATTERN:format(icon), name), nil, {
 						oldName = name,
 					});
+					
 				elseif(button == "LeftButton") then
 					UseEquipmentSet(name);
 				end
