@@ -1536,8 +1536,10 @@ function FlashTalentReagentFrame_OnEnter(self)
 	local canChange, remainingTime = A:CanChangeTalents();
 	if(not canChange) then
 		GameTooltip:AddLine("|cffff953fCurrently you are unable to change talents without using one of the items.|r", nil, nil, nil, true);
-	else
+	elseif(canChange and not remainingTime) then
 		GameTooltip:AddLine("|cffa2ed12You are able to change talents for free at this moment.|r", nil, nil, nil, true);
+	elseif(canChange and remainingTime) then
+		GameTooltip:AddLine("|cffa2ed12You are able to change talents at this moment.|r", nil, nil, nil, true);
 	end
 	
 	GameTooltip:AddLine(" ");
