@@ -61,7 +61,7 @@
 							<Color r="1" g="1" b="1" a="1"/>
 						</Texture>
 						<FontString name="$parentLevelText" parentKey="levelText" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
-							<Size x="60" y="42"/>
+							<Size x="75" y="42"/>
 							<Anchors>
 								<Anchor point="CENTER" x="0" y="-1"/>
 							</Anchors>
@@ -187,7 +187,7 @@
 		</Layers>
 		<Frames>
 			<Button name="$parentReagents" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
-				<Size x="70" y="20"/>
+				<Size x="55" y="20"/>
 				<Anchors>
 					<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="2"/>
 				</Anchors>

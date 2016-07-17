@@ -168,6 +168,7 @@ function A:OnEnable()
 	A:RegisterEvent("UNIT_AURA");
 	A:RegisterEvent("BAG_UPDATE_DELAYED");
 	A:RegisterEvent("MODIFIER_STATE_CHANGED");
+	A:RegisterEvent("PLAYER_UPDATE_RESTING");
 	
 	A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
 	A:RegisterEvent("EQUIPMENT_SETS_CHANGED", "EQUIPMENT_SWAP_FINISHED");
@@ -528,6 +529,11 @@ function A:PLAYER_REGEN_DISABLED()
 end
 
 function A:BAG_UPDATE_DELAYED()
+	if(InCombatLockdown()) then return end
+	A:UpdateReagentCount()
+end
+
+function A:PLAYER_UPDATE_RESTING()
 	if(InCombatLockdown()) then return end
 	A:UpdateReagentCount()
 end
@@ -1172,7 +1178,13 @@ function A:UpdatePVETalentCooldowns()
 					local remaining = start + duration - GetTime();
 					
 					tierFrame.lockFade:Show();
-					tierFrame.lockFade.levelText:SetText(A:FormatTime(remaining));
+					
+					if(enable == 1) then
+						tierFrame.lockFade.levelText:SetText(A:FormatTime(remaining));
+					else
+						tierFrame.lockFade.levelText:SetText("--");
+					end
+					
 					tierIsOnCooldown = true;
 					
 					tierFrame.isOnCooldown = true;
