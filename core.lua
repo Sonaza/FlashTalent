@@ -789,6 +789,15 @@ local function AddScriptedTooltipLine(tooltip, text, onClick, onEnter, onLeave)
 	return lineIndex;
 end
 
+function A:GetSpecializationInfoByName(specName)
+	for specIndex = 1, GetNumSpecializations() do
+		local id, name, description, icon, background, role, primaryStat = GetSpecializationInfo(specIndex);
+		if(name == specName) then
+			return id, name, description, icon, background, role, primaryStat;
+		end
+	end
+end
+
 function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and not forceRefresh) then return end
 	
@@ -822,9 +831,13 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			
 			local specSetName = "";
 			if(specSets[name]) then
-				local specID = GetSpecialization(false, false, specSets[name]);
-				local _, specName, _, specIcon = GetSpecializationInfo(specID);
-				specSetName = string.format(" |cffaaaaaa%s %s|r", strtrim(ICON_PATTERN:format(specIcon)), specName);
+				local _, specName, _, specIcon = GetSpecializationInfo(specSets[name]);
+				specSetName = string.format(" |cffffee22%s %s|r", strtrim(ICON_PATTERN:format(specIcon)), specName);
+			else
+				local _, specName, _, specIcon = A:GetSpecializationInfoByName(name);
+				if(specName) then
+					specSetName = string.format(" |cffaaaaaa%s %s|r", strtrim(ICON_PATTERN:format(specIcon)), specName);
+				end
 			end
 			
 			local equipmentTitle;
@@ -845,7 +858,7 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 				GameTooltip:AddLine("Shift Middle click  |cffffffffUpdate set", 0, 1, 0);
 				GameTooltip:AddLine(" ");
 				
-				if(not specSets[name] or specSets[name] ~= GetActiveSpecGroup()) then
+				if(not specSets[name] or specSets[name] ~= GetSpecialization()) then
 					local _, specName, _, specIcon = GetSpecializationInfo(GetSpecialization());
 					GameTooltip:AddLine(string.format("Ctrl Shift Right click  |cffffffffTag this set for |cffffffff%s %s|r", ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
 				else
@@ -880,7 +893,6 @@ function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 					
 				elseif(button == "RightButton") then
 					local icon, setID = GetEquipmentSetInfoByName(name);
-					icon = "Interface\\Icons\\" .. icon;
 					
 					StaticPopup_Show("FLASHTALENT_RENAME_EQUIPMENT_SET", string.format("%s %s", ICON_PATTERN:format(icon), name), nil, {
 						oldName = name,
