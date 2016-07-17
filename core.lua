@@ -791,7 +791,7 @@ end
 
 function A:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and not forceRefresh) then return end
-	if(FlashTalentSpecButton.tooltip.category ~= 2) then return end
+	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip.category ~= 2) then return end
 	
 	local tooltip;
 	local positionData = {};
