@@ -1053,7 +1053,7 @@ function FlashTalentFrameHonorLevel_OnEnter(self)
 	local reward = PVPHonorSystem_GetNextReward();
 	
 	local level     = UnitHonorLevel("player");
-	local prestige  = UnitPrestige("player")+4;
+	local prestige  = UnitPrestige("player");
 	local honor     = UnitHonor("player");
 	local honorMax  = UnitHonorMax("player");
 	
