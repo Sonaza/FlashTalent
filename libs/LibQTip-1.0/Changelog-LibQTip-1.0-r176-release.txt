@@ -1,0 +1,13 @@
+------------------------------------------------------------------------
+r176 | torhal | 2015-11-17 01:28:49 +0000 (Tue, 17 Nov 2015) | 1 line
+Changed paths:
+   A /tags/r176-release (from /trunk:175)
+
+Tagging as r176-release
+------------------------------------------------------------------------
+r175 | torhal | 2015-11-17 01:27:04 +0000 (Tue, 17 Nov 2015) | 1 line
+Changed paths:
+   M /trunk/LibQTip-1.0.toc
+
+ToC bump because I finally have Subversion access again...
+------------------------------------------------------------------------
