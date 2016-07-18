@@ -18,4 +18,4 @@ Hovering the button will open specializations menu where you can change your spe
 Right click on the button will open equipment sets list where you can equip and update your existing sets and configure automatic set switcher.
 
 ## Dependencies
-FlashTalent uses Ace3, LibDataBroker and LibQTip which are included in the /libs directory.
+FlashTalent uses Ace3, LibDataBroker, LibQTip and LibSharedMedia which are included in the /libs directory.
