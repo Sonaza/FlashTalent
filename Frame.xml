@@ -1,6 +1,33 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 	
+	<Font name="FlashTalent_NumberFont_Large_Shadow" font="Interface\AddOns\FlashTalent\media\DORISPP.TTF" outline="NORMAL" virtual="true">
+		<Shadow>
+			<Offset>
+				<AbsDimension x="0" y="-2"/>
+			</Offset>
+			<Color r="0" g="0" b="0"/>
+		</Shadow>
+		<FontHeight>
+			<AbsValue val="17"/>
+		</FontHeight>
+	</Font>
+	
+	<Font name="FlashTalent_NumberFont_Med"  font="Interface\AddOns\FlashTalent\media\DORISPP.TTF" outline="NORMAL" virtual="true">
+		<FontHeight>
+			<AbsValue val="13"/>
+		</FontHeight>
+	</Font>
+	
+	<Font name="FlashTalent_NumberFont_Med_Shadow" inherits="FlashTalent_NumberFont_Med" virtual="true">
+		<Shadow>
+			<Offset>
+				<AbsDimension x="0" y="-2"/>
+			</Offset>
+			<Color r="0" g="0" b="0" a="0.45"/>
+		</Shadow>
+	</Font>
+	
 	<Button name="FlashTalentButtonTemplate" virtual="true" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
 		<Size x="32" y="32"/>
 		<Layers>
@@ -10,7 +37,7 @@
 				</Texture>
 			</Layer>
 			<Layer level="OVERLAY">
-				<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="32" justifyH="CENTER" hidden="true">
+				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Med" text="32" justifyH="CENTER" hidden="true">
 					<Size x="32" y="32"/>
 					<Anchors>
 						<Anchor point="CENTER" x="0" y="-1"/>
@@ -60,7 +87,7 @@
 						<Texture name="$parentTexture" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\lockfade">
 							<Color r="1" g="1" b="1" a="1"/>
 						</Texture>
-						<FontString name="$parentLevelText" parentKey="levelText" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
+						<FontString name="$parentLevelText" parentKey="levelText" inherits="FlashTalent_NumberFont_Med" text="" justifyH="CENTER">
 							<Size x="75" y="42"/>
 							<Anchors>
 								<Anchor point="CENTER" x="0" y="-1"/>
@@ -107,15 +134,6 @@
 		</Frames>
 	</Frame>
 	
-	<Font name="FlashTalent_NumberFont_Shadow" inherits="NumberFont_Outline_Large">
-		<Shadow>
-			<Offset>
-				<AbsDimension x="0" y="-2"/>
-			</Offset>
-			<Color r="0" g="0" b="0"/>
-		</Shadow>
-	</Font>
-	
 	<Button name="FlashTalentTabButtonTemplate" virtual="true">
 		<Size x="42" y="42"/>
 		<Layers>
@@ -144,10 +162,10 @@
 					</Anchors>
 					<TexCoords left="0.5" right="1" top="0" bottom="1"/>
 				</Texture>
-				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Shadow" text="" justifyH="CENTER" hidden="true">
+				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Large_Shadow" text="" justifyH="CENTER" hidden="true">
 					<Size x="32" y="32"/>
 					<Anchors>
-						<Anchor point="CENTER" x="0" y="-1"/>
+						<Anchor point="CENTER" x="1" y="-1"/>
 					</Anchors>
 				</FontString>
 			</Layer>
@@ -168,6 +186,18 @@
 			<OnLeave function="FlashTalentTabButton_OnLeave"/>
 		</Scripts>
 	</Button>
+	
+	<GameTooltip name="FlashTalentExtraTooltip" frameStrata="TOOLTIP" hidden="true" parent="UIParent" inherits="GameTooltipTemplate">
+	</GameTooltip>
+	
+	<StatusBar name="FlashTalentBarTemplate" virtual="true">
+		<Anchors>
+			<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent" x="4" y="2"/>
+			<Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" x="-4" y="-4"/>
+		</Anchors>
+		<BarTexture file="Interface\AddOns\FlashTalent\media\bartexture"/>
+		<BarColor r="1" g="1" b="1"/>
+	</StatusBar>
 
 	<Frame name="FlashTalentFrame" parent="UIParent" hidden="true" movable="true" clampedToScreen="true" frameStrata="MEDIUM">
 		<Size x="154" y="264"/>
@@ -203,16 +233,55 @@
 						<Anchors>
 							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
 						</Anchors>
-						<Layers>
-							<Layer level="ARTWORK">
-								<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" text="" justifyH="CENTER">
-									<Size x="102" y="42"/>
-									<Anchors>
-										<Anchor point="CENTER" x="0" y="-2"/>
-									</Anchors>
-								</FontString>
-							</Layer>
-						</Layers>
+						<Frames>
+							<StatusBar name="$parentXPBarBackground" parentKey="XPBarBackground" inherits="FlashTalentBarTemplate"/>
+							<StatusBar name="$parentXPBar" parentKey="XPBar" inherits="FlashTalentBarTemplate">
+								<Scripts>
+									<OnLoad>
+										self:SetFrameLevel(self:GetParent().XPBarBackground:GetFrameLevel()+1);
+									</OnLoad>
+								</Scripts>
+							</StatusBar>
+							<StatusBar name="$parentXPBarColor" parentKey="XPBarColor" inherits="FlashTalentBarTemplate">
+								<BarTexture file="Interface\AddOns\FlashTalent\media\bartexture" alphaMode="ADD"/>
+								<Scripts>
+									<OnLoad>
+										self:SetFrameLevel(self:GetParent().XPBar:GetFrameLevel()+1);
+									</OnLoad>
+								</Scripts>
+							</StatusBar>
+							<Frame name="$parentLabel" parentKey="label">
+								<Size x="102" y="42"/>
+								<Anchors>
+									<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" x="0" y="0"/>
+								</Anchors>
+								<Layers>
+									<Layer level="ARTWORK">
+										<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Med_Shadow" text="" justifyH="CENTER">
+											<Size x="102" y="42"/>
+											<Anchors>
+												<Anchor point="CENTER" x="0" y="-2"/>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<Scripts>
+									<OnLoad>
+										self:SetFrameLevel(self:GetParent().XPBar:GetFrameLevel()+5);
+									</OnLoad>
+								</Scripts>
+							</Frame>
+						</Frames>
+						<Scripts>
+							<OnEnter function="FlashTalentFrameHonorLevel_OnEnter"/>
+							<OnLeave function="FlashTalentFrameHonorLevel_OnLeave"/>
+							<OnMouseDown>
+								FlashTalentFrame_OnMouseDown(FlashTalentFrame);
+							</OnMouseDown>
+							<OnMouseUp>
+								FlashTalentFrame_OnMouseUp(FlashTalentFrame);
+							</OnMouseUp>
+						</Scripts>
 					</Frame>
 					
 					<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
@@ -255,7 +324,7 @@
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK">
-						<FontString name="$parentText" parentKey="text" inherits="NumberFont_Outline_Med" justifyH="LEFT" text="">
+						<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Med" justifyH="LEFT" text="">
 							<Size x="70" y="20"/>
 							<Anchors>
 								<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent" x="0" y="0"/>

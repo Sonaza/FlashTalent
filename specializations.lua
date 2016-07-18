@@ -29,7 +29,7 @@ function FlashTalentSpecButton_OnEnter(self)
 	
 	local areSpecsUnlocked = UnitLevel("player") >= SHOW_SPEC_LEVEL;
 	
-	self.tooltip:AddHeader("|cffffdd00Specializations|r");
+	self.tooltip:AddHeader("|cffffd200Specializations|r");
 	self.tooltip:AddSeparator();
 	
 	for specIndex = 1, GetNumSpecializations() do
@@ -65,7 +65,7 @@ function FlashTalentSpecButton_OnEnter(self)
 	end
 	
 	if(areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
-		self.tooltip:AddLine(string.format("|cffffdd00Left click a specialization to change to it.|r"));
+		self.tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
 	end
 	
 	if(areSpecsUnlocked) then
@@ -73,7 +73,7 @@ function FlashTalentSpecButton_OnEnter(self)
 		local petname = UnitName("pet");
 		if(class == "HUNTER" and petname) then
 			self.tooltip:AddLine(" ");
-			self.tooltip:AddLine(string.format("|cffffdd00%s's Specialization|r", petname));
+			self.tooltip:AddLine(string.format("|cffffd200%s's Specialization|r", petname));
 			self.tooltip:AddSeparator();
 			
 			for specIndex = 1, GetNumSpecializations(false, true) do
@@ -100,10 +100,10 @@ function FlashTalentSpecButton_OnEnter(self)
 		self.tooltip:AddLine(" ");
 		if(Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
 			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
-			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffdd00%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
+			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	else
-		self.tooltip:AddLine(string.format("|cffffdd00Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
+		self.tooltip:AddLine(string.format("|cffffd200Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
 		self.tooltip:AddLine(" ");
 	end
 	

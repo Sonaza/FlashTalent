@@ -4,14 +4,12 @@
 -- http://sonaza.com
 ------------------------------------------------------------
 
-
 local ADDON_NAME = ...;
 local Addon = LibStub("AceAddon-3.0"):NewAddon(select(2, ...), ADDON_NAME, "AceEvent-3.0");
 _G[ADDON_NAME] = Addon;
 
 local _;
 
-local AceDB = LibStub("AceDB-3.0");
 local LibQTip = LibStub("LibQTip-1.0");
 
 local TALENT_CLASS = 1;
@@ -63,47 +61,6 @@ local PVP_TALENT_LEVELS = {
 };
 
 ----------------------------------------------------------
-
-local defaults = {
-	char = {
-		AskedKeybind        = false,
-		AutoSwitchGearSet   = false,
-		OpenTalentTab       = 1,
-		PreviousSpec        = 0,
-		SpecSets            = {},
-		LegionSetReset      = false,
-	},
-	global = {
-		AskedKeybind        = false,
-		
-		Position = {
-			Point           = "CENTER",
-			RelativePoint   = "CENTER",
-			x               = 180,
-			y               = 0,
-		},
-		StickyWindow        = false,
-		WindowScale         = 1.0,
-		IsWindowOpen        = false,
-		
-		AlwaysShowTooltip   = false,
-		AnchorSide          = "RIGHT",
-		
-		HideBlizzAlert      = false,
-	},
-};
-
-function Addon:OnInitialize()
-	self.db = AceDB:New("FlashTalentDB", defaults);
-	
-	Addon.CurrentTalentTab = self.db.char.OpenTalentTab;
-	
-	-- Because set indexing changed, the sets must be reset. Sorry!
-	if(not self.db.char.LegionSetReset) then
-		self.db.char.SpecSets = {};
-		self.db.char.LegionSetReset = true;
-	end
-end
 
 function Addon:OnEnable()
 	Addon:RegisterEvent("PLAYER_REGEN_DISABLED");
@@ -426,6 +383,7 @@ function Addon:UpdateFrame()
 	end
 	
 	FlashTalentFrame:SetScale(self.db.global.WindowScale);
+	Addon:UpdateFonts();
 end
 
 function FlashTalentFrame_OnShow(self)
@@ -521,13 +479,13 @@ function FlashTalentTabButton_OnEnter(self)
 	local level = UnitLevel("player");
 	
 	local tabID = self:GetID();
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+	GameTooltip:SetOwner(self, "ANCHOR_" .. Addon.db.global.AnchorSide);
 	
 	if(tabID == CLASS_TALENTS_TAB) then -- PVE tab
 		GameTooltip:AddLine("Class Talents");
 		
 		if(level >= SHOW_TALENT_LEVEL) then
-			GameTooltip:AddLine("|cffffffffView to class talents.");
+			GameTooltip:AddLine("|cffffffffView class talents.");
 			GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 		
 			if(GetNumUnspentTalents() > 0) then
@@ -542,7 +500,7 @@ function FlashTalentTabButton_OnEnter(self)
 		GameTooltip:AddLine("Honor Talents");
 		
 		if(level >= SHOW_PVP_TALENT_LEVEL) then
-			GameTooltip:AddLine("|cffffffffView to honor talents.|r");
+			GameTooltip:AddLine("|cffffffffView honor talents.|r");
 			GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
 			
 			GameTooltip:AddLine(" ");
@@ -974,10 +932,11 @@ function Addon:UpdatePVPTalentFrame()
 	if(InCombatLockdown()) then return end
 	
 	FlashTalentFrameTalentsTier1:Hide();
+	Addon:UpdatePVPXPBar();
 	
 	local honorLevel = UnitHonorLevel("player");
 	
-	FlashTalentFrameTalentsHonorLevel.text:SetText(string.format("|cffffdd00Level|r %s", honorLevel));
+	FlashTalentFrameTalentsHonorLevel.label.text:SetText(string.format("|cffffd200Level|r %s", honorLevel));
 	FlashTalentFrameTalentsHonorLevel:Show();
 	
 	local group = GetActiveSpecGroup();
@@ -1029,18 +988,146 @@ function Addon:UpdatePVPTalentFrame()
 	end
 end
 
-function Addon:GetTalentClearInfo()
-	local level = UnitLevel("player");
-	local selection = math.floor( (UnitLevel("player")-1) / 100 ) + 1;
+function Addon:UpdatePVPXPBar()
+	local _, class = UnitClass("player");
+	local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class];
 	
-	local info = {};
-	for _, itemID in ipairs(TALENT_CLEAR_ITEMS[selection]) do
-		tinsert(info, {
-			itemID, GetItemCount(itemID), GetItemIcon(itemID),
+	FlashTalentFrameTalentsHonorLevel.XPBarBackground:SetStatusBarColor(color.r * 0.3, color.g * 0.3, color.b * 0.3, 0.6);
+	FlashTalentFrameTalentsHonorLevel.XPBar:SetStatusBarColor(color.r, color.g, color.b, 0.8);
+	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetStatusBarColor(color.r, color.g, color.b, 0.35);
+	
+	local honor     = UnitHonor("player")+154;
+	local honorMax  = UnitHonorMax("player");
+	
+	FlashTalentFrameTalentsHonorLevel.XPBar:SetMinMaxValues(0, honorMax);
+	FlashTalentFrameTalentsHonorLevel.XPBar:SetValue(honor);
+	FlashTalentFrameTalentsHonorLevel.XPBar:Show();
+	
+	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetMinMaxValues(0, honorMax);
+	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetValue(honor);
+	FlashTalentFrameTalentsHonorLevel.XPBarColor:Show();
+end
+
+local function rgba2hex(r, g, b, a)
+	r = r or 1;
+	g = g or 1;
+	b = b or 1;
+	a = a or 1;
+	return string.format("%02x%02x%02x%02x", a * 255, r * 255, g * 255, b * 255);
+end
+
+function Addon:CopyGameTooltip()
+	local tooltip = {};
+	
+	for index = 1, GameTooltip:NumLines() do
+		local left = _G["GameTooltipTextLeft" .. index];
+		local right = _G["GameTooltipTextRight" .. index];
+		
+		local leftText, rightText;
+		
+		if(left and left:GetText()) then
+			leftText = string.format("|c%s%s|r", rgba2hex(left:GetTextColor()), left:GetText());
+		end
+		
+		if(right and right:GetText()) then
+			rightText = string.format("|c%s%s|r", rgba2hex(right:GetTextColor()), right:GetText());
+		end
+		
+		tinsert(tooltip, {
+			left = leftText,
+			right = rightText,
 		});
 	end
 	
-	return info;
+	return tooltip;
+end
+
+function FlashTalentFrameHonorLevel_OnEnter(self)
+	if(TipTac and TipTac.AddModifiedTip and not self.tiptacAdded) then
+		self.tiptacAdded = true;
+		TipTac:AddModifiedTip(FlashTalentExtraTooltip);
+	end
+	
+	self.tooltip = FlashTalentExtraTooltip;
+	
+	local reward = PVPHonorSystem_GetNextReward();
+	
+	local level     = UnitHonorLevel("player");
+	local prestige  = UnitPrestige("player")+4;
+	local honor     = UnitHonor("player");
+	local honorMax  = UnitHonorMax("player");
+	
+	self.label.text:SetText(string.format("%d / %d", honor, honorMax, honor / honorMax * 100));
+	
+	self.tooltip:ClearLines();
+	self.tooltip:ClearAllPoints();
+	self.tooltip:SetOwner(self, "ANCHOR_NONE");
+	
+	if(Addon.db.global.AnchorSide == "RIGHT") then
+		self.tooltip:SetPoint("TOPRIGHT", self, "TOPLEFT", 0, 2);
+	elseif(Addon.db.global.AnchorSide == "LEFT") then
+		self.tooltip:SetPoint("TOPLEFT", self, "TOPRIGHT", 0, 2);
+	end
+	
+	local prestigeText = "";
+	
+	if(prestige > 0) then
+		prestigeText = string.format("|cffffd200Prestige|r %d", prestige);
+	end
+	
+	self.tooltip:AddDoubleLine(
+		string.format("|cffffd200Honor Level|r %d", level), prestigeText, 1, 1, 1, 1, 1, 1
+	);
+	
+	self.tooltip:AddLine(" ");
+	
+	self.tooltip:AddLine(string.format("|cffffd200Current progress|r %d / %d |cffdddddd(%0.1f%%)|r", honor, honorMax, honor / honorMax * 100), 1, 1, 1, true);
+	
+	if(honor < honorMax and not CanPrestige()) then
+		self.tooltip:AddLine(string.format("%d honor to next level", honorMax - honor), 1, 1, 1, true);
+	elseif(tCanPrestige()) then
+		self.tooltip:AddLine("|cffffd200Prestige available!|r", 1, 1, 1, true);
+	end
+	
+	GameTooltip:SetOwner(self, "ANCHOR_NONE");
+	GameTooltip:ClearAllPoints();
+	
+	if(Addon.db.global.AnchorSide == "RIGHT") then
+		GameTooltip:SetPoint("TOPRIGHT", self.tooltip, "BOTTOMRIGHT", 0, 0);
+	elseif(Addon.db.global.AnchorSide == "LEFT") then
+		GameTooltip:SetPoint("TOPLEFT", self.tooltip, "BOTTOMLEFT", 0, 0);
+	end
+	
+	reward:SetTooltip();
+	
+	if(GameTooltipTextLeft1 and GameTooltipTextLeft1:GetText()) then
+		GameTooltipTextLeft1:SetText("|cffffd200Next Reward|r|n|n" .. GameTooltipTextLeft1:GetText());
+	end
+	
+	GameTooltip:Show();
+	
+	-- Hide TipTac icon
+	if(GameTooltip.ttIcon) then
+		GameTooltip.ttIcon:Hide();
+	end
+	
+	-- Super pretty hack to get the tooltip exactly as wide as gametooltip without having wonky text
+	self.tooltip:SetMinimumWidth(GameTooltip:GetWidth());
+	self.tooltip:Show();
+	self.tooltip:SetMinimumWidth(GameTooltip:GetWidth() - (self.tooltip:GetWidth() - GameTooltip:GetWidth()));
+	self.tooltip:Show();
+end
+
+function FlashTalentFrameHonorLevel_OnLeave(self)
+	GameTooltip:Hide();
+	self.tooltip:Hide();
+	
+	if(Addon.db.global.AnchorSide == "LEFT" and GameTooltip.ttIcon) then
+		GameTooltip.ttIcon:Show();
+	end
+	
+	local honorLevel = UnitHonorLevel("player");
+	self.label.text:SetText(string.format("|cffffd200Level|r %s", honorLevel));
 end
 
 function Addon:HighlightTalent(highlightTier, highlightColumn)
@@ -1172,6 +1259,20 @@ end
 -------------------------------------------------------
 -- Reagents
 
+function Addon:GetTalentClearInfo()
+	local level = UnitLevel("player");
+	local selection = math.floor( (UnitLevel("player")-1) / 100 ) + 1;
+	
+	local info = {};
+	for _, itemID in ipairs(TALENT_CLEAR_ITEMS[selection]) do
+		tinsert(info, {
+			itemID, GetItemCount(itemID), GetItemIcon(itemID),
+		});
+	end
+	
+	return info;
+end
+
 function Addon:UpdateReagentCount()
 	local canChange, remainingTime = Addon:CanChangeTalents();
 	if(canChange and remainingTime) then
@@ -1247,7 +1348,7 @@ function FlashTalentReagentFrame_OnEnter(self)
 	
 	if(remainingTime) then
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine(string.format("|cffffdd00You have |cff77ff00%s|cffffdd00 to change talents.|r", Addon:FormatTime(remainingTime)));
+		GameTooltip:AddLine(string.format("|cffffd200You have |cff77ff00%s|cffffd200 to change talents.|r", Addon:FormatTime(remainingTime)));
 	end
 	
 	GameTooltip:Show();

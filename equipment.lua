@@ -5,7 +5,6 @@
 ------------------------------------------------------------
 
 local ADDON_NAME, Addon = ...;
-local data = Addon.data;
 local _;
 
 local LibStub = LibStub;
@@ -72,7 +71,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	local tooltip = FlashTalentSpecButton.tooltip;
 	
 	tooltip:Clear();
-	tooltip:AddHeader("|cffffdd00Equipment Sets|r");
+	tooltip:AddHeader("|cffffd200Equipment Sets|r");
 	
 	local numEquipmentSets = GetNumEquipmentSets();
 	if(numEquipmentSets > 0) then
@@ -172,9 +171,9 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	
 	local lineIndex;
 	if(self.db.char.AutoSwitchGearSet) then
-		lineIndex = tooltip:AddLine("|cffffdd00Auto Switch Gear Set|r", "|cff33ff00Enabled|r");
+		lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cff33ff00Enabled|r");
 	else
-		lineIndex = tooltip:AddLine("|cffffdd00Auto Switch Gear Set|r", "|cffff2222Disabled|r");
+		lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cffff2222Disabled|r");
 	end
 	
 	tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
@@ -186,7 +185,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffdd00Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
+		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffd200Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
 		
 		GameTooltip:Show();
 	end);
@@ -200,7 +199,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		Addon:RefreshItemSetsMenu();
 	end);
 	
-	Addon:AddScriptedTooltipLine(tooltip, "|cffffdd00Open Equipment Manager|r", function()
+	Addon:AddScriptedTooltipLine(tooltip, "|cffffd200Open Equipment Manager|r", function()
 		if(not PaperDollFrame:IsVisible()) then
 			ToggleCharacter("PaperDollFrame");
 		end

@@ -15,6 +15,7 @@
   * Added option to disable Blizzard alert about unspent talent points.
   * Reorganized internal frame structure so that the whole window stays clamped inside game screen.
   * Disabled challenge mode restriction (temporarily?) because systems have changed and I'm unable to test it without beta.
+  * Added a default font changeable in the options menu.
   * Plenty of miscellaneous bug fixes and other minor changes.
 
 ## 1.2.0

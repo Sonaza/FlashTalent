@@ -3,7 +3,7 @@
 ## Notes: Quickly switch talents while out of combat
 ## Author: Sonaza
 ## Version: 2.0.0
-## OptionalDeps: Ace3
+## OptionalDeps: Ace3, TipTac
 ## SavedVariables: FlashTalentDB
 
 #@no-lib-strip@
@@ -12,6 +12,7 @@ libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 libs\AceAddon-3.0\AceAddon-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceEvent-3.0\AceEvent-3.0.xml
+libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
 libs\LibQTip-1.0\LibQTip-1.0.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 #@end-no-lib-strip@

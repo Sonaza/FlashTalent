@@ -7,6 +7,63 @@
 local ADDON_NAME, Addon = ...;
 local _;
 
+local AceDB = LibStub("AceDB-3.0");
+local LibSharedMedia = LibStub("LibSharedMedia-3.0");
+
+-- Adding default media to LibSharedMedia in case they're not already added
+LibSharedMedia:Register("font", "DorisPP", [[Interface\AddOns\FlashTalent\media\DORISPP.TTF]]);
+
+local defaults = {
+	char = {
+		AskedKeybind        = false,
+		AutoSwitchGearSet   = false,
+		OpenTalentTab       = 1,
+		PreviousSpec        = 0,
+		SpecSets            = {},
+		LegionSetReset      = false,
+	},
+	global = {
+		AskedKeybind        = false,
+		
+		FontFace            = "DorisPP",
+		Position = {
+			Point           = "CENTER",
+			RelativePoint   = "CENTER",
+			x               = 180,
+			y               = 0,
+		},
+		
+		StickyWindow        = false,
+		WindowScale         = 1.0,
+		IsWindowOpen        = false,
+		
+		AlwaysShowTooltip   = false,
+		AnchorSide          = "RIGHT",
+		
+		HideBlizzAlert      = false,
+		
+	},
+};
+
+function Addon:OnInitialize()
+	self.db = AceDB:New("FlashTalentDB", defaults);
+	
+	Addon.CurrentTalentTab = self.db.char.OpenTalentTab;
+	
+	-- Because set indexing changed, the sets must be reset. Sorry!
+	if(not self.db.char.LegionSetReset) then
+		self.db.char.SpecSets = {};
+		self.db.char.LegionSetReset = true;
+	end
+end
+
+function Addon:UpdateFonts()
+	local fontPath = LibSharedMedia:Fetch("font", self.db.global.FontFace);
+	FlashTalent_NumberFont_Large_Shadow:SetFont(fontPath, 17, "OUTLINE");
+	FlashTalent_NumberFont_Med:SetFont(fontPath, 13, "OUTLINE");
+	FlashTalent_NumberFont_Med_Shadow:SetFont(fontPath, 13, "OUTLINE");
+end
+
 function Addon:ToggleEscapeClose()
 	if(not self.db.global.StickyWindow) then
 		tinsert(UISpecialFrames, "FlashTalentFrame");
@@ -33,6 +90,23 @@ function Addon:GetWindowScaleMenu()
 	end
 	
 	return menu;
+end
+
+function Addon:GetSharedFonts()
+	local fonts = {};
+	for index, font in ipairs(LibSharedMedia:List("font")) do
+		tinsert(fonts, {
+			text = font,
+			func = function()
+				self.db.global.FontFace = font;
+				Addon:UpdateFrame();
+				CloseMenus();
+			end,
+			checked = function() return self.db.global.FontFace == font; end,
+		});
+	end
+	
+	return fonts;
 end
 
 function Addon:GetMenuData()
@@ -65,13 +139,19 @@ function Addon:GetMenuData()
 			text = "Miscellaneous", isTitle = true, notCheckable = true,
 		},
 		{
-			text = string.format("|cffffdd00Window scale:|r %d%%", Addon.db.global.WindowScale * 100),
+			text = string.format("|cffffd200Window scale:|r %d%%", Addon.db.global.WindowScale * 100),
 			hasArrow = true,
 			notCheckable = true,
 			menuList = Addon:GetWindowScaleMenu(),
 		},
 		{
-			text = string.format("|cffffdd00Anchor side:|r %s", string.lower(self.db.global.AnchorSide)),
+			text = string.format("|cffffd200Font:|r %s", Addon.db.global.FontFace),
+			hasArrow = true,
+			notCheckable = true,
+			menuList = Addon:GetSharedFonts(),
+		},
+		{
+			text = string.format("|cffffd200Anchor side:|r %s", string.lower(self.db.global.AnchorSide)),
 			hasArrow = true,
 			notCheckable = true,
 			menuList = {
