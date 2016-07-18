@@ -996,7 +996,7 @@ function Addon:UpdatePVPXPBar()
 	FlashTalentFrameTalentsHonorLevel.XPBar:SetStatusBarColor(color.r, color.g, color.b, 0.8);
 	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetStatusBarColor(color.r, color.g, color.b, 0.35);
 	
-	local honor     = UnitHonor("player")+154;
+	local honor     = UnitHonor("player");
 	local honorMax  = UnitHonorMax("player");
 	
 	FlashTalentFrameTalentsHonorLevel.XPBar:SetMinMaxValues(0, honorMax);
