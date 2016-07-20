@@ -4,6 +4,8 @@
 -- http://sonaza.com
 ------------------------------------------------------------
 
+HONOR_TALENT_UNLOCK_LEVEL = 110;
+
 local ADDON_NAME = ...;
 local Addon = LibStub("AceAddon-3.0"):NewAddon(select(2, ...), ADDON_NAME, "AceEvent-3.0");
 _G[ADDON_NAME] = Addon;
@@ -60,7 +62,12 @@ local PVP_TALENT_LEVELS = {
 	{ 10, 28, 46 },
 };
 
-----------------------------------------------------------
+SLASH_FLASHTALENT1	= "/flashtalent";
+SLASH_FLASHTALENT2	= "/ft";
+SlashCmdList["FLASHTALENT"] = function(params)
+	local tab = strsplit(" ", strtrim(params));
+	Addon:ToggleFrame(T or nil);
+end
 
 function Addon:OnEnable()
 	Addon:RegisterEvent("PLAYER_REGEN_DISABLED");
@@ -153,7 +160,7 @@ function Addon:OnUpdate(elapsed)
 		end
 	end
 	
-	if(Addon.db.global.HideBlizzAlert) then
+	if(Addon.db and Addon.db.global.HideBlizzAlert) then
 		TalentMicroButtonAlert:Hide();
 	end
 end
@@ -167,25 +174,25 @@ function Addon:SetupSecureFrameToggler(short)
 	
 	local initMacroText = "";
 	
-	if(not short) then
-		initMacroText = 
-			"/stopmacro [combat]\n"..
-			"/click TalentMicroButton\n"..
-			"/click PlayerTalentFrameTab3\n"..
-			"/click PlayerTalentFrameTab2\n"..
-			"/click TalentMicroButton\n";
-	end
+	-- if(not short) then
+	-- 	initMacroText = 
+	-- 		"/stopmacro [combat]\n"..
+	-- 		"/click TalentMicroButton\n"..
+	-- 		"/click PlayerTalentFrameTab3\n"..
+	-- 		"/click PlayerTalentFrameTab2\n"..
+	-- 		"/click TalentMicroButton\n";
+	-- end
 	
 	Addon.SecureFrameToggler:SetAttribute("type1", "macro");
 	Addon.SecureFrameToggler:SetAttribute("macrotext1",
 		initMacroText ..
-		"/run FlashTalent:ToggleFrame(" .. CLASS_TALENTS_TAB .. ")"
+		"/flashtalent " .. CLASS_TALENTS_TAB
 	);
 	
 	Addon.SecureFrameToggler:SetAttribute("type2", "macro");
 	Addon.SecureFrameToggler:SetAttribute("macrotext2",
 		initMacroText ..
-		"/run FlashTalent:ToggleFrame(" .. HONOR_TALENTS_TAB .. ")"
+		"/flashtalent " .. HONOR_TALENTS_TAB
 	);
 end
 
@@ -340,7 +347,7 @@ function Addon:ToggleFrame(tabIndex)
 	
 	local tabIndex = tabIndex or Addon.CurrentTalentTab;
 	
-	if(tabIndex == HONOR_TALENTS_TAB and UnitLevel("player") < SHOW_PVP_TALENT_LEVEL) then
+	if(tabIndex == HONOR_TALENTS_TAB and UnitLevel("player") < HONOR_TALENT_UNLOCK_LEVEL) then
 		tabIndex = CLASS_TALENTS_TAB;
 	end
 	
@@ -433,7 +440,7 @@ end
 function Addon:OpenTalentTab(tabIndex)
 	if(tabIndex ~= CLASS_TALENTS_TAB and tabIndex ~= HONOR_TALENTS_TAB) then return end
 	
-	if(tabIndex == HONOR_TALENTS_TAB and UnitLevel("player") < SHOW_PVP_TALENT_LEVEL) then
+	if(tabIndex == HONOR_TALENTS_TAB and UnitLevel("player") < HONOR_TALENT_UNLOCK_LEVEL) then
 		tabIndex = CLASS_TALENTS_TAB;
 	end
 	
@@ -499,9 +506,9 @@ function FlashTalentTabButton_OnEnter(self)
 	elseif(tabID == HONOR_TALENTS_TAB) then -- PVP Tab
 		GameTooltip:AddLine("Honor Talents");
 		
-		if(level >= SHOW_PVP_TALENT_LEVEL) then
+		if(level >= HONOR_TALENT_UNLOCK_LEVEL) then
 			GameTooltip:AddLine("|cffffffffView honor talents.|r");
-			GameTooltip:AddLine("|cff00ff00Right click|r  Open talent panel.");
+			GameTooltip:AddLine("|cff00ff00Right click|r  Open honor talent panel.");
 			
 			GameTooltip:AddLine(" ");
 			
@@ -523,7 +530,10 @@ function FlashTalentTabButton_OnEnter(self)
 				GameTooltip:AddLine(string.format("%d unspent talent point%s.", GetNumUnspentPvpTalents(), GetNumUnspentPvpTalents() == 1 and "" or "s"));
 			end
 		else
-			GameTooltip:AddLine(string.format("|cffffffffHonor talents unlock at level %d.", SHOW_PVP_TALENT_LEVEL));
+			GameTooltip:AddLine(string.format("|cffffffffHonor talents unlock at level %d.", HONOR_TALENT_UNLOCK_LEVEL));
+			if(level >= SHOW_PVP_TALENT_LEVEL) then
+				GameTooltip:AddLine("|cff00ff00Right click|r  Open honor talent panel.");
+			end
 		end
 	end
 	
@@ -582,7 +592,7 @@ function Addon:UpdateTabIcons()
 		SetPortraitToTexture(pvptab.icon, "Interface\\Icons\\INV_Staff_2H_PandarenMonk_C_01");
 	end
 	
-	if(level < SHOW_PVP_TALENT_LEVEL) then
+	if(level < HONOR_TALENT_UNLOCK_LEVEL) then
 		pvptab.disabled = true;
 	else
 		pvptab.disabled = false;

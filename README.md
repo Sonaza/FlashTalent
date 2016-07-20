@@ -9,6 +9,8 @@ FlashTalent is a simple talents addon to make switching talents and specializati
 ### Usage
 To begin with you must assign a key bind for the addon. In case one has not been set the addon should prompt for it. If not, go to the Key Bindings menu from the Game Menu (hint: press ESC) and then browse to AddOns category. From there you will find the option to bind a key. Additionally you can also bind key for the quick spec switch and equipment set menu. To move the frame hold down alt key and drag it with mouse.
 
+If you wish you can also use slash commands **/ft [tab]** or **/flashtalent [tab]**. Command will open FlashTalent window on the given tab index and defaults to class talents tab.
+
 When FlashTalent is open you can click a talent on a row to learn it. This is possible when you are out of combat, and resting or have used required tome or codex.
 
 In the upper right corner you can find the specializations and equipment sets button.

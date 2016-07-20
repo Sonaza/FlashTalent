@@ -1,3 +1,7 @@
+## 2.0.1
+* Fix to scripts alert caused by the addon.
+* Added slash commands **/ft [tab]** and **/flashtalent [tab]**. Command will open FlashTalent window on the given tab index and defaults to class talents tab.
+
 ## 2.0.0
 * Legion update.
   * Updated to support changed talent API.
