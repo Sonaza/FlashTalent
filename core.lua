@@ -531,9 +531,6 @@ function FlashTalentTabButton_OnEnter(self)
 			end
 		else
 			GameTooltip:AddLine(string.format("|cffffffffHonor talents unlock at level %d.", HONOR_TALENT_UNLOCK_LEVEL));
-			if(level >= SHOW_PVP_TALENT_LEVEL) then
-				GameTooltip:AddLine("|cff00ff00Right click|r  Open honor talent panel.");
-			end
 		end
 	end
 	

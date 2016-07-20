@@ -1,3 +1,6 @@
+## 2.0.2
+* Removed erroneous tooltip message for honor tab.
+
 ## 2.0.1
 * Fix to scripts alert caused by the addon.
 * Disabled honor tab until level 110.
