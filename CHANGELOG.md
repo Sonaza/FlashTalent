@@ -1,3 +1,6 @@
+## 2.0.3
+* Fixed nil error with missing equipment set icons.
+
 ## 2.0.2
 * Removed erroneous tooltip message for honor tab.
 

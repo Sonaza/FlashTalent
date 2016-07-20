@@ -84,6 +84,10 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			local lineIndex;
 			local name, icon, setID, isEquipped, numItems, numEquipped, numInventory, numMissing, numIgnored = GetEquipmentSetInfo(index);
 			
+			if(icon == nil) then
+				icon = "Interface\\icons\\INV_Misc_QuestionMark";
+			end
+			
 			if(setName) then
 				isEquipped = (setName == name);
 			end
