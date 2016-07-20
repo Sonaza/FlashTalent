@@ -1,5 +1,6 @@
 ## 2.0.1
 * Fix to scripts alert caused by the addon.
+* Disabled honor tab until level 110.
 * Added slash commands **/ft [tab]** and **/flashtalent [tab]**. Command will open FlashTalent window on the given tab index and defaults to class talents tab.
 
 ## 2.0.0
