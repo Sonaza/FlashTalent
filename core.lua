@@ -668,11 +668,17 @@ function Addon:PLAYER_UPDATE_RESTING()
 	Addon:UpdateReagentCount();
 end
 
-function Addon:UNIT_AURA()
+function Addon:UNIT_AURA(event, unit)
+	if(unit ~= "player") then return end
 	if(InCombatLockdown()) then return end
 	if(not FlashTalentFrame:IsVisible()) then return end
 	Addon:UpdateTalentFrame();
 	Addon:UpdateReagentCount();
+	
+	if(self.scheduledTalentChange and Addon:CanChangeTalents()) then
+		Addon:LearnTalent(self.scheduledTalentCategory, self.scheduledTalentID);
+		self.scheduledTalentChange = false;
+	end
 end
 
 function Addon:UNIT_PET()
@@ -709,20 +715,30 @@ function FlashTalentButtonTemplate_PostClick(self)
 	
 	if(self.isUnlocked and self.talentID) then
 		local canChange, remainingTime = Addon:CanChangeTalents();
-		local timeout = 0;
-		
 		if(not canChange and Addon.db.global.UseReagents) then
-			local latency = select(4, GetNetStats())
-			timeout = (latency / 1000 * 3.5);
+			-- Schedule talent change when UNIT_AURA event is triggered
+			Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
+		else
+			Addon:LearnTalent(self.talentCategory, self.talentID);
 		end
-		
-		C_Timer.After(timeout, function()
-			if(self.talentCategory == TALENT_CLASS) then
-				LearnTalent(self.talentID);
-			elseif(self.talentCategory == TALENT_HONOR) then
-				LearnPvpTalent(self.talentID);
-			end
-		end);
+	end
+end
+
+function Addon:ScheduleTalentChange(category, talentID)
+	if(not category or not talentID) then return end
+	
+	self.scheduledTalentCategory = category;
+	self.scheduledTalentID       = talentID;
+	self.scheduledTalentChange   = true;
+end
+
+function Addon:LearnTalent(category, talentID)
+	if(not category or not talentID) then return end
+	
+	if(category == TALENT_CLASS) then
+		LearnTalent(talentID);
+	elseif(category == TALENT_HONOR) then
+		LearnPvpTalent(talentID);
 	end
 end
 
