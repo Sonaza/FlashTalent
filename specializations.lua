@@ -23,7 +23,7 @@ function FlashTalentSpecButton_OnEnter(self)
 	Addon:OpenSpecializationsMenu(self, self.tooltip);
 end
 
-function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
+function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	if(not tooltip) then return end
 	
 	tooltip:Clear();
@@ -69,7 +69,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
 		end
 	end
 	
-	if(areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
+	if(not isCursorTip and areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
 		tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
 	end
 	
@@ -103,7 +103,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
 	
 	if(areSpecsUnlocked) then
 		tooltip:AddLine(" ");
-		if(Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
+		if(not isCursorTip and Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
 			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
 			tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
@@ -112,9 +112,13 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
 		tooltip:AddLine(" ");
 	end
 	
-	tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
+	if(not isCursorTip) then
+		tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
+	else
+		tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
+	end
 	
-	tooltip:SetAutoHideDelay(0.35, anchorFrame);
+	tooltip:SetAutoHideDelay(0.4, anchorFrame);
 	tooltip.OnRelease = function()
 		tooltip = nil;
 	end
@@ -124,7 +128,7 @@ end
 
 function Addon:OpenSpecializationsMenuAtCursor(anchorFrame)
 	Addon.SpecializationCursorMenuTooltip = LibQTip:Acquire("FlashTalentSpecButtonCursorTooltip", 2, "LEFT", "RIGHT");
-	Addon:OpenSpecializationsMenu(anchorFrame, Addon.SpecializationCursorMenuTooltip);
+	Addon:OpenSpecializationsMenu(anchorFrame, Addon.SpecializationCursorMenuTooltip, true);
 	
 	if(Addon.SpecializationCursorMenuTooltip) then
 		Addon.SpecializationCursorMenuTooltip:ClearAllPoints();

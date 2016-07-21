@@ -213,7 +213,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		end
 	end);
 	
-	tooltip:SetAutoHideDelay(0.5, anchorFrame);
+	tooltip:SetAutoHideDelay(0.4, anchorFrame);
 	FlashTalentSpecButton.tooltip.OnRelease = function()
 		FlashTalentSpecButton.tooltip = nil;
 	end

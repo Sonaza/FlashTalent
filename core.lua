@@ -231,8 +231,21 @@ function Addon:UnitHasBuff(unit, spell)
 	return true, math.max(0, expirationTime - GetTime());
 end
 
+function Addon:PlayerHasPreparation()
+	local buffs = { 32727, 44521, 228128, };
+	for _, spellid in ipairs(buffs) do
+		local hasBuff = Addon:UnitHasBuff("player", spellid);
+		if(hasBuff) then
+			return true;
+		end
+	end
+	
+	return false;
+end
+
 function Addon:CanChangeTalents()
 	if(InCombatLockdown()) then return false end
+	if(Addon:PlayerHasPreparation()) then return true end
 	
 	local level = UnitLevel("player");
 	
@@ -247,7 +260,7 @@ function Addon:CanChangeTalents()
 	
 	if(IsResting()) then return true end
 	
-	return false, nil;
+	return false;
 end
 
 function Addon:AddScriptedTooltipLine(tooltip, text, onClick, onEnter, onLeave)

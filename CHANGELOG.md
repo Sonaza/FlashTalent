@@ -1,6 +1,7 @@
 ## 2.1.0
 * The key binding to open equipment sets menu at cursor now also opens specializations menu at cursor.
 * Added an option to automatically consume a Tome of the Clear/Tranquil Mind when it is necessary. The option is disabled by default.
+* Addon should now properly recognise battleground, arena and dungeon preparation grace period.
 
 ## 2.0.3
 * Fixed nil error with missing equipment set icons.
