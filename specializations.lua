@@ -123,12 +123,12 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
 end
 
 function Addon:OpenSpecializationsMenuAtCursor(anchorFrame)
-	local tooltip = LibQTip:Acquire("FlashTalentSpecButtonCursorTooltip", 2, "LEFT", "RIGHT");
-	Addon:OpenSpecializationsMenu(anchorFrame, tooltip);
+	Addon.SpecializationCursorMenuTooltip = LibQTip:Acquire("FlashTalentSpecButtonCursorTooltip", 2, "LEFT", "RIGHT");
+	Addon:OpenSpecializationsMenu(anchorFrame, Addon.SpecializationCursorMenuTooltip);
 	
-	if(tooltip) then
-		tooltip:ClearAllPoints();
-		tooltip:SetPoint("TOP", anchorFrame, "CENTER", 0, 1);
+	if(Addon.SpecializationCursorMenuTooltip) then
+		Addon.SpecializationCursorMenuTooltip:ClearAllPoints();
+		Addon.SpecializationCursorMenuTooltip:SetPoint("TOP", anchorFrame, "CENTER", 0, 1);
 	end
 end
 
@@ -142,6 +142,11 @@ function Addon:UpdateSpecTooltips()
 	if(Addon.DataBrokerTooltip and Addon.DataBrokerTooltip:IsVisible()) then
 		local _, parent = Addon.DataBrokerTooltip:GetPoint()
 		Addon:DataBroker_OnEnter(parent);
+	end
+	
+	if(Addon.SpecializationCursorMenuTooltip and Addon.SpecializationCursorMenuTooltip:IsVisible()) then
+		local _, anchorFrame = Addon.SpecializationCursorMenuTooltip:GetPoint();
+		Addon:OpenSpecializationsMenuAtCursor(anchorFrame);
 	end
 end
 
