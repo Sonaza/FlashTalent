@@ -70,18 +70,21 @@ SlashCmdList["FLASHTALENT"] = function(params)
 end
 
 function Addon:OnEnable()
-	Addon:RegisterEvent("PLAYER_REGEN_DISABLED");
-	if(InCombatLockdown()) then
-		Addon:RegisterEvent("PLAYER_REGEN_ENABLED");
-	end
+	Addon:SetupSecureFrameToggler();
 	
-	Addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+	Addon:UpdateFrame();
+	Addon:UpdateTalentFrame();
+	Addon:UpdateTabIcons();
+	
+	Addon:RegisterEvent("PLAYER_REGEN_DISABLED");
+	
+	Addon:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
 	Addon:RegisterEvent("PET_SPECIALIZATION_CHANGED");
 	
 	Addon:RegisterEvent("PLAYER_TALENT_UPDATE");
 	Addon:RegisterEvent("PLAYER_PVP_TALENT_UPDATE", "PLAYER_TALENT_UPDATE");
 	
-	if(UnitLevel("player") < MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel()]) then
+	if(UnitLevel("player") < MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]) then
 		Addon:RegisterEvent("PLAYER_LEVEL_UP");
 	end
 	
@@ -135,12 +138,6 @@ function Addon:OnEnable()
 	-- 	Addon:CHALLENGE_MODE_START();
 	-- end
 	
-	Addon:SetupSecureFrameToggler();
-	
-	Addon:UpdateTalentFrame();
-	Addon:UpdateFrame();
-	Addon:UpdateTabIcons();
-	
 	Addon:InitializeDatabroker();
 end
 
@@ -165,33 +162,20 @@ function Addon:OnUpdate(elapsed)
 	end
 end
 
-function Addon:SetupSecureFrameToggler(short)
+function Addon:SetupSecureFrameToggler()
 	if(InCombatLockdown()) then return end
 	
 	if(not Addon.SecureFrameToggler) then
 		Addon.SecureFrameToggler = CreateFrame("Button", "FlashTalentFrameToggler", nil, "SecureActionButtonTemplate");
 	end
 	
-	local initMacroText = "";
-	
-	-- if(not short) then
-	-- 	initMacroText = 
-	-- 		"/stopmacro [combat]\n"..
-	-- 		"/click TalentMicroButton\n"..
-	-- 		"/click PlayerTalentFrameTab3\n"..
-	-- 		"/click PlayerTalentFrameTab2\n"..
-	-- 		"/click TalentMicroButton\n";
-	-- end
-	
 	Addon.SecureFrameToggler:SetAttribute("type1", "macro");
 	Addon.SecureFrameToggler:SetAttribute("macrotext1",
-		initMacroText ..
 		"/flashtalent " .. CLASS_TALENTS_TAB
 	);
 	
 	Addon.SecureFrameToggler:SetAttribute("type2", "macro");
 	Addon.SecureFrameToggler:SetAttribute("macrotext2",
-		initMacroText ..
 		"/flashtalent " .. HONOR_TALENTS_TAB
 	);
 end
@@ -313,7 +297,13 @@ function Addon:SetTalentTooltip(talentButton)
 	
 	local canChange = Addon:CanChangeTalents();
 	if(not canChange and Addon.db.global.UseReagents and not talentButton.isSelected) then
+		local reagents = Addon:GetTalentClearInfo();
+		local reagentID, reagentCount, reagentIcon = unpack(reagents[1]);
+		
 		GameTooltip:AddLine("|cff00ff00You can click the talent to automatically use a Tome and change to this talent.|r", 1, 1, 1, true);
+		if(reagentCount and reagentCount == 0) then
+			GameTooltip:AddLine("|cffff0000You have no Tomes currently.|r", 1, 1, 1, true);
+		end
 	end
 	
 	GameTooltip:Show();
@@ -358,6 +348,8 @@ function Addon:RestorePosition()
 	if(position and position.Point and position.RelativePoint and position.x and position.y) then
 		FlashTalentFrame:ClearAllPoints();
 		FlashTalentFrame:GetPoint(position.Point, UIparent, position.RelativePoint, position.x, position.y);
+		
+		print(position.Point, position.RelativePoint, position.x, position.y)
 	end
 end
 
@@ -371,16 +363,13 @@ function Addon:ToggleFrame(tabIndex)
 	end
 	
 	if(not FlashTalentFrame:IsVisible() or Addon.CurrentTalentTab ~= tabIndex) then
-		Addon:RestorePosition();
 		FlashTalentFrame:Show();
-		Addon:OpenTalentTab(tabIndex);
+		Addon:RestorePosition();
+		Addon:UpdateFrame();
+		Addon:UpdateTalentFrame();
+		-- Addon:OpenTalentTab(tabIndex);
 	else
 		FlashTalentFrame:Hide();
-	end
-	
-	if(not Addon.ShortToggler) then
-		Addon.ShortToggler = true;
-		Addon:SetupSecureFrameToggler(true);
 	end
 end
 
@@ -408,8 +397,11 @@ function Addon:UpdateFrame()
 		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 7, -3);
 	end
 	
+	print(self.db.global.WindowScale)
+	
 	FlashTalentFrame:SetScale(self.db.global.WindowScale);
-	Addon:UpdateFonts();
+	-- Addon:RestorePosition();
+	-- Addon:UpdateFonts();
 end
 
 function FlashTalentFrame_OnShow(self)
@@ -444,12 +436,6 @@ end
 function Addon:PLAYER_REGEN_DISABLED()
 	if(not self.db.global.StickyWindow) then
 		FlashTalentFrame:Hide();
-	end
-end
-
-function Addon:PLAYER_REGEN_ENABLED()
-	if(not Addon.SecureFrameToggler) then
-		Addon:SetupSecureFrameToggler();
 	end
 end
 
@@ -707,6 +693,37 @@ end
 -------------------------------------------------------
 -- Talent buttons
 
+-- Blizz function from Blizzard_TalentUI.lua
+local function HandleGeneralTalentFrameChatLink(self, talentName, talentLink)
+	if ( MacroFrameText and MacroFrameText:HasFocus() ) then
+		local spellName, subSpellName = GetSpellInfo(talentName);
+		if ( spellName and not IsPassiveSpell(spellName) ) then
+			if ( subSpellName and (strlen(subSpellName) > 0) ) then
+				ChatEdit_InsertLink(spellName.."("..subSpellName..")");
+			else
+				ChatEdit_InsertLink(spellName);
+			end
+		end
+	elseif ( talentLink ) then
+		ChatEdit_InsertLink(talentLink);
+	end
+end
+
+function Addon:HandleTalentChatLink(button)
+	local talentName, talentLink;
+	if(button.talentCategory == TALENT_CLASS) then
+		talentName = select(2, GetTalentInfoByID(button.talentID, 1, false));
+		talentLink = GetTalentLink(button.talentID);
+	elseif(button.talentCategory == TALENT_HONOR) then
+		talentName = select(2, GetPvpTalentInfoByID(button.talentID, 1));
+		talentLink = GetPvpTalentLink(button.talentID);
+	end
+	
+	if(talentName and talentLink) then
+		HandleGeneralTalentFrameChatLink(nil, talentName, talentLink);
+	end
+end
+
 function FlashTalentButtonTemplate_PostClick(self)
 	if(FlashTalentFrame.isMoving or FlashTalentFrame.wasMoved) then
 		FlashTalentFrame.wasMoved = false;
@@ -714,12 +731,16 @@ function FlashTalentButtonTemplate_PostClick(self)
 	end
 	
 	if(self.isUnlocked and self.talentID) then
-		local canChange, remainingTime = Addon:CanChangeTalents();
-		if(not canChange and Addon.db.global.UseReagents) then
-			-- Schedule talent change when UNIT_AURA event is triggered
-			Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
+		if(IsModifiedClick("CHATLINK")) then
+			Addon:HandleTalentChatLink(self);
 		else
-			Addon:LearnTalent(self.talentCategory, self.talentID);
+			local canChange, remainingTime = Addon:CanChangeTalents();
+			if(not canChange and Addon.db.global.UseReagents) then
+				-- Schedule talent change when UNIT_AURA event is triggered
+				Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
+			else
+				Addon:LearnTalent(self.talentCategory, self.talentID);
+			end
 		end
 	end
 end
@@ -1233,7 +1254,6 @@ end
 
 function Addon:MODIFIER_STATE_CHANGED(event, key, state)
 	if(InCombatLockdown()) then return end
-	
 	if(not Addon.HoveredTalent) then return end
 	
 	if(key == "LSHIFT" or key == "RSHIFT") then

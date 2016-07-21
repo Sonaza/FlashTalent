@@ -162,9 +162,9 @@ function Addon:HideSpecButtonTooltip()
 	FlashTalentSpecButton.tooltip = nil;
 end
 
-function Addon:PLAYER_SPECIALIZATION_CHANGED(event, unit)
+local playerPreviousSpecialization = GetSpecialization();
+function Addon:ACTIVE_TALENT_GROUP_CHANGED(event)
 	if(InCombatLockdown()) then return end
-	if(unit ~= "player") then return end
 	
 	if(Addon.OldSpecialization ~= nil and Addon.OldSpecialization ~= 0) then
 		Addon.db.char.PreviousSpec = Addon.OldSpecialization;
@@ -176,23 +176,27 @@ function Addon:PLAYER_SPECIALIZATION_CHANGED(event, unit)
 	if(self.db.char.AutoSwitchGearSet) then
 		local activeSpec = GetSpecialization();
 		
-		local setName;
-		if(self.db.char.SpecSets[activeSpec]) then
-			setName = self.db.char.SpecSets[activeSpec];
-		end
-		
-		if(not setName or not GetEquipmentSetInfoByName(setName)) then
-			local _, specName = GetSpecializationInfo(activeSpec);
-			setName = specName;
-		end
-		
-		local icon, setID, isEquipped, numItems, numEquipped, unknown, numMissing, numIgnored = GetEquipmentSetInfoByName(setName);
-		if(icon ~= nil and not isEquipped) then
-			if(numMissing == 0) then
-				local latency = select(4, GetNetStats());
-				C_Timer.After(0.3 + latency / 1000, function()
-					UseEquipmentSet(setName);
-				end);
+		if(playerPreviousSpecialization ~= activeSpec) then
+			playerPreviousSpecialization = activeSpec;
+			
+			local setName;
+			if(self.db.char.SpecSets[activeSpec]) then
+				setName = self.db.char.SpecSets[activeSpec];
+			end
+			
+			if(not setName or not GetEquipmentSetInfoByName(setName)) then
+				local _, specName = GetSpecializationInfo(activeSpec);
+				setName = specName;
+			end
+			
+			local icon, setID, isEquipped, numItems, numEquipped, unknown, numMissing, numIgnored = GetEquipmentSetInfoByName(setName);
+			if(icon ~= nil and not isEquipped) then
+				if(numMissing == 0) then
+					local latency = select(4, GetNetStats());
+					C_Timer.After(0.3 + latency / 1000, function()
+						UseEquipmentSet(setName);
+					end);
+				end
 			end
 		end
 	end

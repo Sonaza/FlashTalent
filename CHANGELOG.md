@@ -1,3 +1,8 @@
+## 2.1.1
+* You can now link talents directly from FlashTalent by shift-clicking a talent.
+* Added notice on the talent tooltip when you have no Tomes for auto-use.
+* Fixed auto equipper equipping item sets when changing talents if it is enabled.
+
 ## 2.1.0
 * The key binding to open equipment sets menu at cursor now also opens specializations menu at cursor.
 * Added an option to automatically consume a Tome of the Clear/Tranquil Mind when it is necessary. The option is disabled by default.

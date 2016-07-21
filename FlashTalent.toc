@@ -2,7 +2,7 @@
 ## Title: FlashTalent
 ## Notes: Quickly switch talents and specs while out of combat
 ## Author: Sonaza
-## Version: 2.1.0
+## Version: 2.1.1
 ## OptionalDeps: Ace3, TipTac
 ## SavedVariables: FlashTalentDB
 
