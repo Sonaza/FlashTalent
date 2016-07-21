@@ -349,7 +349,7 @@ function Addon:RestorePosition()
 		FlashTalentFrame:ClearAllPoints();
 		FlashTalentFrame:GetPoint(position.Point, UIparent, position.RelativePoint, position.x, position.y);
 		
-		print(position.Point, position.RelativePoint, position.x, position.y)
+		-- print(position.Point, position.RelativePoint, position.x, position.y)
 	end
 end
 
@@ -397,11 +397,10 @@ function Addon:UpdateFrame()
 		FlashTalentFrameSettingsButton:SetPoint("BOTTOM", FlashTalentFrameTabs, "BOTTOM", 7, -3);
 	end
 	
-	print(self.db.global.WindowScale)
+	-- print(self.db.global.WindowScale)
 	
 	FlashTalentFrame:SetScale(self.db.global.WindowScale);
-	-- Addon:RestorePosition();
-	-- Addon:UpdateFonts();
+	Addon:UpdateFonts();
 end
 
 function FlashTalentFrame_OnShow(self)
