@@ -20,7 +20,7 @@ BINDING_HEADER_FLASHTALENT = "FlashTalent";
 _G["BINDING_NAME_CLICK FlashTalentFrameToggler:LeftButton"] = "Toggle FlashTalent Class Talents";
 _G["BINDING_NAME_CLICK FlashTalentFrameToggler:RightButton"] = "Toggle FlashTalent Honor Talents";
 _G["BINDING_NAME_FLASHTALENT_CHANGE_DUALSPEC"] = "Quick Switch to Previous Spec";
-_G["BINDING_NAME_FLASHTALENT_OPEN_ITEM_SETS_MENU"] = "Open Equipment Menu at Cursor";
+_G["BINDING_NAME_FLASHTALENT_OPEN_ITEM_SETS_MENU"] = "Open Menus at Cursor";
 
 StaticPopupDialogs["FLASHTALENT_NO_KEYBIND"] = {
 	text = "FlashTalent does not currently have a keybinding. Do you want to open the key binding menu to set it?|n|nOption you are looking for is found under AddOns category.",

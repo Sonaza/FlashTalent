@@ -20,17 +20,22 @@ end
 
 function FlashTalentSpecButton_OnEnter(self)
 	self.tooltip = LibQTip:Acquire("FlashTalentSpecButtonTooltip", 2, "LEFT", "RIGHT");
+	Addon:OpenSpecializationsMenu(self, self.tooltip);
+end
+
+function Addon:OpenSpecializationsMenu(anchorFrame, tooltip)
+	if(not tooltip) then return end
 	
-	self.tooltip:Clear();
-	self.tooltip:ClearAllPoints();
-	self.tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, -2);
+	tooltip:Clear();
+	tooltip:ClearAllPoints();
+	tooltip:SetPoint("BOTTOMLEFT", anchorFrame, "TOPLEFT", 0, -2);
 	
-	self.tooltip.category = 1;
+	tooltip.category = 1;
 	
 	local areSpecsUnlocked = UnitLevel("player") >= SHOW_SPEC_LEVEL;
 	
-	self.tooltip:AddHeader("|cffffd200Specializations|r");
-	self.tooltip:AddSeparator();
+	tooltip:AddHeader("|cffffd200Specializations|r");
+	tooltip:AddSeparator();
 	
 	for specIndex = 1, GetNumSpecializations() do
 		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex);
@@ -49,13 +54,13 @@ function FlashTalentSpecButton_OnEnter(self)
 		end
 		
 		if(areSpecsUnlocked or isActiveSpecialization) then
-			local lineIndex = self.tooltip:AddLine(
+			local lineIndex = tooltip:AddLine(
 				string.format("%s %s%s|r %s", FLASHTALENT_ICON_PATTERN:format(icon), color, name, FLASHTALENT_ICON_ROLES[role]),
 				activeText
 			);
 			
 			if(areSpecsUnlocked) then
-				self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+				tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization()) then
 						SetSpecialization(specIndex);
 					end
@@ -65,16 +70,16 @@ function FlashTalentSpecButton_OnEnter(self)
 	end
 	
 	if(areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
-		self.tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
+		tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
 	end
 	
 	if(areSpecsUnlocked) then
 		local _, class = UnitClass("player");
 		local petname = UnitName("pet");
 		if(class == "HUNTER" and petname) then
-			self.tooltip:AddLine(" ");
-			self.tooltip:AddLine(string.format("|cffffd200%s's Specialization|r", petname));
-			self.tooltip:AddSeparator();
+			tooltip:AddLine(" ");
+			tooltip:AddLine(string.format("|cffffd200%s's Specialization|r", petname));
+			tooltip:AddSeparator();
 			
 			for specIndex = 1, GetNumSpecializations(false, true) do
 				local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
@@ -85,9 +90,9 @@ function FlashTalentSpecButton_OnEnter(self)
 					activeText = "|cff00ff00Active|r";
 				end
 				
-				local lineIndex = self.tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), activeText);
+				local lineIndex = tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), activeText);
 				
-				self.tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
+				tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization(false, true)) then
 						SetSpecialization(specIndex, true);
 					end
@@ -97,24 +102,34 @@ function FlashTalentSpecButton_OnEnter(self)
 	end
 	
 	if(areSpecsUnlocked) then
-		self.tooltip:AddLine(" ");
+		tooltip:AddLine(" ");
 		if(Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
 			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
-			self.tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
+			tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	else
-		self.tooltip:AddLine(string.format("|cffffd200Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
-		self.tooltip:AddLine(" ");
+		tooltip:AddLine(string.format("|cffffd200Specializations unlock at level %s.|r", SHOW_SPEC_LEVEL));
+		tooltip:AddLine(" ");
 	end
 	
-	self.tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
+	tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
 	
-	self.tooltip:SetAutoHideDelay(0.35, self);
-	self.tooltip.OnRelease = function()
-		self.tooltip = nil;
+	tooltip:SetAutoHideDelay(0.35, anchorFrame);
+	tooltip.OnRelease = function()
+		tooltip = nil;
 	end
 	
-	self.tooltip:Show();
+	tooltip:Show();
+end
+
+function Addon:OpenSpecializationsMenuAtCursor(anchorFrame)
+	local tooltip = LibQTip:Acquire("FlashTalentSpecButtonCursorTooltip", 2, "LEFT", "RIGHT");
+	Addon:OpenSpecializationsMenu(anchorFrame, tooltip);
+	
+	if(tooltip) then
+		tooltip:ClearAllPoints();
+		tooltip:SetPoint("TOP", anchorFrame, "CENTER", 0, 1);
+	end
 end
 
 function Addon:UpdateSpecTooltips()

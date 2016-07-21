@@ -32,24 +32,12 @@ function Addon:UpdateEquipmentSet(setName)
 	SaveEquipmentSet(setName);
 end
 
-local FlashTalentMenuCursorAnchor;
-function Addon:OpenItemSetsMenuAtCursor()
-	if(not FlashTalentMenuCursorAnchor) then
-		FlashTalentMenuCursorAnchor = CreateFrame("Frame", "FlashTalentMenuCursorAnchor", UIParent);
-		FlashTalentMenuCursorAnchor:SetSize(20, 20);
-	end
-	
-	local x, y = GetCursorPosition();
-	local uiscale = UIParent:GetEffectiveScale();
-	
-	FlashTalentMenuCursorAnchor:ClearAllPoints();
-	FlashTalentMenuCursorAnchor:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / uiscale, y / uiscale);
-	
-	local tooltip = Addon:OpenItemSetsMenu(FlashTalentMenuCursorAnchor);
+function Addon:OpenItemSetsMenuAtCursor(anchorFrame)
+	local tooltip = Addon:OpenItemSetsMenu(anchorFrame);
 	
 	if(tooltip) then
 		tooltip:ClearAllPoints();
-		tooltip:SetPoint("BOTTOM", FlashTalentMenuCursorAnchor, "CENTER", 0, -2);
+		tooltip:SetPoint("BOTTOM", anchorFrame, "CENTER", 0, -1);
 	end
 end
 

@@ -55,7 +55,7 @@
 			<OnDragStart function="FlashTalentButtonTemplate_OnDragStart"/>
 			<OnMouseDown function="FlashTalentFrame_OnMouseDown"/>
 			<OnMouseUp function="FlashTalentFrame_OnMouseUp"/>
-			<OnClick function="FlashTalentButtonTemplate_OnClick"/>
+			<PostClick function="FlashTalentButtonTemplate_PostClick"/>
 		</Scripts>
 	</Button>
 	
@@ -165,7 +165,7 @@
 				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Large_Shadow" text="" justifyH="CENTER" hidden="true">
 					<Size x="32" y="32"/>
 					<Anchors>
-						<Anchor point="CENTER" x="1" y="-1"/>
+						<Anchor point="CENTER" x="0" y="-1"/>
 					</Anchors>
 				</FontString>
 			</Layer>

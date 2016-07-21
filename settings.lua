@@ -40,6 +40,8 @@ local defaults = {
 		AlwaysShowTooltip   = false,
 		AnchorSide          = "RIGHT",
 		
+		UseReagents         = false,
+		
 		HideBlizzAlert      = false,
 		
 	},
@@ -133,6 +135,12 @@ function Addon:GetMenuData()
 			isNotRadio = true,
 		},
 		{
+			text = "Automatically use a Tome if necessary",
+			func = function() self.db.global.UseReagents = not self.db.global.UseReagents; Addon:UpdateTalentFrame(); end,
+			checked = function() return self.db.global.UseReagents; end,
+			isNotRadio = true,
+		},
+		{
 			text = " ", isTitle = true, notCheckable = true,
 		},
 		{
@@ -183,6 +191,23 @@ function Addon:GetMenuData()
 	return data;
 end
 
+local FlashTalentMenuCursorAnchor;
+function Addon:OpenMenusAtCursor()
+	if(not FlashTalentMenuCursorAnchor) then
+		FlashTalentMenuCursorAnchor = CreateFrame("Frame", "FlashTalentMenuCursorAnchor", UIParent);
+		FlashTalentMenuCursorAnchor:SetSize(20, 20);
+	end
+	
+	local x, y = GetCursorPosition();
+	local uiscale = UIParent:GetEffectiveScale();
+	
+	FlashTalentMenuCursorAnchor:ClearAllPoints();
+	FlashTalentMenuCursorAnchor:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / uiscale, y / uiscale);
+	
+	Addon:OpenItemSetsMenuAtCursor(FlashTalentMenuCursorAnchor);
+	Addon:OpenSpecializationsMenuAtCursor(FlashTalentMenuCursorAnchor);
+end
+
 function Addon:OpenContextMenu(parentframe)
 	if(not Addon.ContextMenu) then
 		Addon.ContextMenu = CreateFrame("Frame", "FlashTalentContextMenuFrame", parentframe, "UIDropDownMenuTemplate");
@@ -201,7 +226,6 @@ function Addon:OpenContextMenu(parentframe)
 	
 	DropDownList1:SetClampedToScreen(true);
 end
-
 
 function FlashTalentFrameSettingsButton_OnEnter(self)
 	if(DropDownList1:IsVisible()) then return end

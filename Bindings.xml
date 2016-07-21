@@ -5,6 +5,6 @@
 		if(not InCombatLockdown()) then FlashTalent:ChangeDualSpec(); end
 	</Binding>
 	<Binding name="FLASHTALENT_OPEN_ITEM_SETS_MENU" category="ADDONS">
-		if(not InCombatLockdown()) then FlashTalent:OpenItemSetsMenuAtCursor(); end
+		if(not InCombatLockdown()) then FlashTalent:OpenMenusAtCursor(); end
 	</Binding>
 </Bindings>

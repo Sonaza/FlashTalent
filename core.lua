@@ -228,12 +228,11 @@ function Addon:UnitHasBuff(unit, spell)
 		return false;
 	end
 	
-	return true, expirationTime - GetTime();
+	return true, math.max(0, expirationTime - GetTime());
 end
 
 function Addon:CanChangeTalents()
 	if(InCombatLockdown()) then return false end
-	if(IsResting()) then return true end
 	
 	local level = UnitLevel("player");
 	
@@ -245,6 +244,8 @@ function Addon:CanChangeTalents()
 			end
 		end
 	end
+	
+	if(IsResting()) then return true end
 	
 	return false, nil;
 end
@@ -295,6 +296,11 @@ function Addon:SetTalentTooltip(talentButton)
 		
 	elseif(talentButton.talentCategory == TALENT_HONOR) then
 		GameTooltip:SetPvpTalent(talentButton.talentID);
+	end
+	
+	local canChange = Addon:CanChangeTalents();
+	if(not canChange and Addon.db.global.UseReagents and not talentButton.isSelected) then
+		GameTooltip:AddLine("|cff00ff00You can click the talent to automatically use a Tome and change to this talent.|r", 1, 1, 1, true);
 	end
 	
 	GameTooltip:Show();
@@ -644,11 +650,15 @@ end
 
 function Addon:PLAYER_UPDATE_RESTING()
 	if(InCombatLockdown()) then return end
-	Addon:UpdateReagentCount()
+	if(not FlashTalentFrame:IsVisible()) then return end
+	Addon:UpdateTalentFrame();
+	Addon:UpdateReagentCount();
 end
 
 function Addon:UNIT_AURA()
 	if(InCombatLockdown()) then return end
+	if(not FlashTalentFrame:IsVisible()) then return end
+	Addon:UpdateTalentFrame();
 	Addon:UpdateReagentCount();
 end
 
@@ -678,18 +688,28 @@ end
 -------------------------------------------------------
 -- Talent buttons
 
-function FlashTalentButtonTemplate_OnClick(self)
+function FlashTalentButtonTemplate_PostClick(self)
 	if(FlashTalentFrame.isMoving or FlashTalentFrame.wasMoved) then
 		FlashTalentFrame.wasMoved = false;
 		return;
 	end
 	
 	if(self.isUnlocked and self.talentID) then
-		if(self.talentCategory == TALENT_CLASS) then
-			LearnTalent(self.talentID);
-		elseif(self.talentCategory == TALENT_HONOR) then
-			LearnPvpTalent(self.talentID);
+		local canChange, remainingTime = Addon:CanChangeTalents();
+		local timeout = 0;
+		
+		if(not canChange and Addon.db.global.UseReagents) then
+			local latency = select(4, GetNetStats())
+			timeout = (latency / 1000 * 3.5);
 		end
+		
+		C_Timer.After(timeout, function()
+			if(self.talentCategory == TALENT_CLASS) then
+				LearnTalent(self.talentID);
+			elseif(self.talentCategory == TALENT_HONOR) then
+				LearnPvpTalent(self.talentID);
+			end
+		end);
 	end
 end
 
@@ -701,6 +721,176 @@ function FlashTalentButtonTemplate_OnDragStart(self)
 			PickupTalent(self.talentID);
 		elseif(self.talentCategory == TALENT_HONOR) then
 			PickupPvpTalent(self.talentID);
+		end
+	end
+end
+
+------------------------------------------------------
+-- Update talents
+
+function Addon:SetTalentButtonReagentAttribute(button, forceDisable)
+	if(not button) then return end
+	if(InCombatLockdown()) then return end
+	
+	forceDisable = forceDisable or false;
+	
+	local canChange, remainingTime = Addon:CanChangeTalents();
+	
+	if(self.db.global.UseReagents and not canChange and not forceDisable) then
+		local reagents = Addon:GetTalentClearInfo();
+		local reagentID, reagentCount, reagentIcon = unpack(reagents[1]);
+		
+		button:SetAttribute("type1", "item");
+		button:SetAttribute("item1", GetItemInfo(reagentID));
+	else
+		button:SetAttribute("item1", "");
+	end
+end
+
+function Addon:UpdateTalentFrame()
+	if(InCombatLockdown()) then return end
+	
+	if(Addon.CurrentTalentTab == 1) then
+		Addon:UpdatePVETalentFrame();
+	elseif(Addon.CurrentTalentTab == 2) then
+		Addon:UpdatePVPTalentFrame();
+	end
+	
+	Addon:UpdateReagentCount();
+end
+
+function Addon:UpdatePVETalentFrame()
+	if(InCombatLockdown()) then return end
+	
+	FlashTalentFrameTalentsTier1:Show();
+	FlashTalentFrameTalentsHonorLevel:Hide();
+	
+	local group = GetActiveSpecGroup();
+	
+	local playerLevel = UnitLevel("player");
+	local _, playerClass = UnitClass("player");
+	
+	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
+	
+	for tier = 1, 7 do
+		Addon:HighlightTalent(tier, -1);
+		
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
+		tierFrame.glowFrame:Hide();
+		
+		local isUnlocked = (playerLevel >= tierLevels[tier]);
+		if(not isUnlocked) then
+			tierFrame.lockFade.levelText:SetText(tierLevels[tier]);
+			tierFrame.lockFade:Show();
+		else
+			tierFrame.lockFade:Hide();
+		end
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			
+			button.text:Hide();
+			
+			local talentID, spellName, icon, isSelected, available, spellID = GetTalentInfo(tier, column, group);
+			local tierAvailable, selection = GetTalentTierInfo(tier, group);
+			local isFree = (selection == 0);
+			
+			if(isSelected) then
+				Addon:HighlightTalent(tier, column);
+			elseif(isUnlocked and talentID and isFree) then
+				IconSetColor(button.icon, TALENT_COLOR_CANLEARN);
+			end
+			
+			if(isFree and isUnlocked) then
+				tierFrame.glowFrame:Show();
+			end
+			
+			button.tier             = tier;
+			button.column           = column;
+			
+			button.talentID         = talentID;
+			button.talentCategory   = TALENT_CLASS;
+			button.isSelected       = isSelected;
+			button.spellName        = spellName;
+			
+			button.tierFree         = isFree;
+			button.isUnlocked       = isUnlocked;
+			
+			Addon:SetTalentButtonReagentAttribute(button, not isUnlocked or isSelected);
+			
+			button.icon:SetTexture(icon);
+			
+			if(isUnlocked) then
+				button.icon:SetDesaturated(false);
+			else
+				button.icon:SetDesaturated(true);
+			end
+		end
+	end
+end
+
+function Addon:IsPVPTalentUnlocked(honorLevel, row, column)
+	return honorLevel >= PVP_TALENT_LEVELS[row][column], PVP_TALENT_LEVELS[row][column];
+end
+
+function Addon:UpdatePVPTalentFrame()
+	if(InCombatLockdown()) then return end
+	
+	FlashTalentFrameTalentsTier1:Hide();
+	Addon:UpdatePVPXPBar();
+	
+	local honorLevel = UnitHonorLevel("player");
+	
+	FlashTalentFrameTalentsHonorLevel.label.text:SetText(string.format("|cffffd200Level|r %s", honorLevel));
+	FlashTalentFrameTalentsHonorLevel:Show();
+	
+	local group = GetActiveSpecGroup();
+	
+	local playerLevel = UnitLevel("player");
+	local _, playerClass = UnitClass("player");
+	
+	for tier = 2, 7 do
+		Addon:HighlightTalent(tier, -1, true);
+		
+		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
+		tierFrame.glowFrame:Hide();
+		
+		for column = 1, 3 do
+			local button = tierFrame["talent" .. column];
+			
+			local isUnlocked, unlockLevel = Addon:IsPVPTalentUnlocked(honorLevel, tier-1, column);
+			
+			local talentID, spellName, icon, isSelected, available, spellID = GetPvpTalentInfo(tier-1, column, group);
+			local isRowFree = GetPvpTalentRowSelectionInfo(tier-1);
+			
+			if(isSelected) then
+				Addon:HighlightTalent(tier, column);
+			elseif(isUnlocked and talentID and isRowFree) then
+				button.icon:SetVertexColor(0.6, 0.6, 0.6);
+			end
+			
+			button.tier             = tier;
+			button.column           = column;
+			
+			button.talentID         = talentID;
+			button.talentCategory   = TALENT_HONOR;
+			button.isSelected       = isSelected;
+			button.spellName        = spellName;
+			
+			button.tierFree         = isFree;
+			button.isUnlocked       = isUnlocked;
+			
+			Addon:SetTalentButtonReagentAttribute(button, not isUnlocked or isSelected);
+			
+			button.icon:SetTexture(icon);
+			
+			if(isUnlocked) then
+				button.icon:SetDesaturated(false);
+			else
+				button.icon:SetDesaturated(true);
+				button.text:SetText(string.format("|cffff2222%d|r", unlockLevel));
+				button.text:Show();
+			end
 		end
 	end
 end
@@ -848,153 +1038,6 @@ function Addon:SPELL_UPDATE_USABLE()
 	Addon:UpdateTalentCooldowns();
 end
 
-------------------------------------------------------
--- Update talents
-
-function Addon:UpdateTalentFrame()
-	if(InCombatLockdown()) then return end
-	
-	if(Addon.CurrentTalentTab == 1) then
-		Addon:UpdatePVETalentFrame();
-	elseif(Addon.CurrentTalentTab == 2) then
-		Addon:UpdatePVPTalentFrame();
-	end
-	
-	Addon:UpdateReagentCount();
-end
-
-function Addon:UpdatePVETalentFrame()
-	if(InCombatLockdown()) then return end
-	
-	FlashTalentFrameTalentsTier1:Show();
-	FlashTalentFrameTalentsHonorLevel:Hide();
-	
-	local group = GetActiveSpecGroup();
-	
-	local playerLevel = UnitLevel("player");
-	local _, playerClass = UnitClass("player");
-	
-	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
-	
-	for tier = 1, 7 do
-		Addon:HighlightTalent(tier, -1);
-		
-		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
-		tierFrame.glowFrame:Hide();
-		
-		local isUnlocked = (playerLevel >= tierLevels[tier]);
-		if(not isUnlocked) then
-			tierFrame.lockFade.levelText:SetText(tierLevels[tier]);
-			tierFrame.lockFade:Show();
-		else
-			tierFrame.lockFade:Hide();
-		end
-		
-		for column = 1, 3 do
-			local button = tierFrame["talent" .. column];
-			
-			button.text:Hide();
-			
-			local talentID, spellName, icon, isSelected, available, spellID = GetTalentInfo(tier, column, group);
-			local tierAvailable, selection = GetTalentTierInfo(tier, group);
-			local isFree = (selection == 0);
-			
-			if(isSelected) then
-				Addon:HighlightTalent(tier, column);
-			elseif(isUnlocked and talentID and isFree) then
-				IconSetColor(button.icon, TALENT_COLOR_CANLEARN);
-			end
-			
-			if(isFree and isUnlocked) then
-				tierFrame.glowFrame:Show();
-			end
-			
-			button.tier             = tier;
-			button.column           = column;
-			
-			button.talentID         = talentID;
-			button.talentCategory   = TALENT_CLASS;
-			button.isSelected       = isSelected;
-			button.spellName        = spellName;
-			
-			button.tierFree         = isFree;
-			button.isUnlocked       = isUnlocked;
-			
-			button.icon:SetTexture(icon);
-			
-			if(isUnlocked) then
-				button.icon:SetDesaturated(false);
-			else
-				button.icon:SetDesaturated(true);
-			end
-		end
-	end
-end
-
-function Addon:IsPVPTalentUnlocked(honorLevel, row, column)
-	return honorLevel >= PVP_TALENT_LEVELS[row][column], PVP_TALENT_LEVELS[row][column];
-end
-
-function Addon:UpdatePVPTalentFrame()
-	if(InCombatLockdown()) then return end
-	
-	FlashTalentFrameTalentsTier1:Hide();
-	Addon:UpdatePVPXPBar();
-	
-	local honorLevel = UnitHonorLevel("player");
-	
-	FlashTalentFrameTalentsHonorLevel.label.text:SetText(string.format("|cffffd200Level|r %s", honorLevel));
-	FlashTalentFrameTalentsHonorLevel:Show();
-	
-	local group = GetActiveSpecGroup();
-	
-	local playerLevel = UnitLevel("player");
-	local _, playerClass = UnitClass("player");
-	
-	for tier = 2, 7 do
-		Addon:HighlightTalent(tier, -1, true);
-		
-		local tierFrame = _G[string.format("FlashTalentFrameTalentsTier%d", tier)];
-		tierFrame.glowFrame:Hide();
-		
-		for column = 1, 3 do
-			local button = tierFrame["talent" .. column];
-			
-			local isUnlocked, unlockLevel = Addon:IsPVPTalentUnlocked(honorLevel, tier-1, column);
-			
-			local talentID, spellName, icon, isSelected, available, spellID = GetPvpTalentInfo(tier-1, column, group);
-			local isRowFree = GetPvpTalentRowSelectionInfo(tier-1);
-			
-			if(isSelected) then
-				Addon:HighlightTalent(tier, column);
-			elseif(isUnlocked and talentID and isRowFree) then
-				button.icon:SetVertexColor(0.6, 0.6, 0.6);
-			end
-			
-			button.tier             = tier;
-			button.column           = column;
-			
-			button.talentID         = talentID;
-			button.talentCategory   = TALENT_HONOR;
-			button.isSelected       = isSelected;
-			button.spellName        = spellName;
-			
-			button.tierFree         = isFree;
-			button.isUnlocked       = isUnlocked;
-			
-			button.icon:SetTexture(icon);
-			
-			if(isUnlocked) then
-				button.icon:SetDesaturated(false);
-			else
-				button.icon:SetDesaturated(true);
-				button.text:SetText(string.format("|cffff2222%d|r", unlockLevel));
-				button.text:Show();
-			end
-		end
-	end
-end
-
 function Addon:UpdatePVPXPBar()
 	local _, class = UnitClass("player");
 	local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class];
@@ -1013,40 +1056,6 @@ function Addon:UpdatePVPXPBar()
 	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetMinMaxValues(0, honorMax);
 	FlashTalentFrameTalentsHonorLevel.XPBarColor:SetValue(honor);
 	FlashTalentFrameTalentsHonorLevel.XPBarColor:Show();
-end
-
-local function rgba2hex(r, g, b, a)
-	r = r or 1;
-	g = g or 1;
-	b = b or 1;
-	a = a or 1;
-	return string.format("%02x%02x%02x%02x", a * 255, r * 255, g * 255, b * 255);
-end
-
-function Addon:CopyGameTooltip()
-	local tooltip = {};
-	
-	for index = 1, GameTooltip:NumLines() do
-		local left = _G["GameTooltipTextLeft" .. index];
-		local right = _G["GameTooltipTextRight" .. index];
-		
-		local leftText, rightText;
-		
-		if(left and left:GetText()) then
-			leftText = string.format("|c%s%s|r", rgba2hex(left:GetTextColor()), left:GetText());
-		end
-		
-		if(right and right:GetText()) then
-			rightText = string.format("|c%s%s|r", rgba2hex(right:GetTextColor()), right:GetText());
-		end
-		
-		tinsert(tooltip, {
-			left = leftText,
-			right = rightText,
-		});
-	end
-	
-	return tooltip;
 end
 
 local HONOR_LEVEL_UNLOCK = 110;
