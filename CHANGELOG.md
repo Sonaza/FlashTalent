@@ -1,8 +1,6 @@
-## 2.1.2
+## 2.1.1
 * Fixed tooltip note about talent tomes.
 * Prevent auto tome use if talent row is free.
-
-## 2.1.1
 * You can now link talents directly from FlashTalent by shift-clicking a talent.
 * Added notice on the talent tooltip when you have no Tomes for auto-use.
 * Fixed auto equipper equipping item sets when changing talents if it is enabled.
