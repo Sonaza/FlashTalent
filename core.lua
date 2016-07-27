@@ -296,13 +296,19 @@ function Addon:SetTalentTooltip(talentButton)
 	end
 	
 	local canChange = Addon:CanChangeTalents();
-	if(not canChange and Addon.db.global.UseReagents and not talentButton.isSelected) then
+	if(not canChange and Addon.db.global.UseReagents and not talentButton.isSelected and talentButton.isUnlocked) then
 		local reagents = Addon:GetTalentClearInfo();
 		local reagentID, reagentCount, reagentIcon = unpack(reagents[1]);
 		
-		GameTooltip:AddLine("|cff00ff00You can click the talent to automatically use a Tome and change to this talent.|r", 1, 1, 1, true);
-		if(reagentCount and reagentCount == 0) then
-			GameTooltip:AddLine("|cffff0000You have no Tomes currently.|r", 1, 1, 1, true);
+		if(not InCombatLockdown()) then
+			if(not talentButton.tierFree) then
+				GameTooltip:AddLine("|cff00ff00You can click the talent to automatically use a Tome and change to this talent.|r", 1, 1, 1, true);
+				if(reagentCount and reagentCount == 0) then
+					GameTooltip:AddLine("|cffff0000You have no Tomes currently.|r", 1, 1, 1, true);
+				end
+			end
+		else
+			GameTooltip:AddLine("|cffff0000You are in combat.|r", 1, 1, 1, true);
 		end
 	end
 	
@@ -734,7 +740,7 @@ function FlashTalentButtonTemplate_PostClick(self)
 			Addon:HandleTalentChatLink(self);
 		else
 			local canChange, remainingTime = Addon:CanChangeTalents();
-			if(not canChange and Addon.db.global.UseReagents) then
+			if(not canChange and Addon.db.global.UseReagents and not self.tierFree) then
 				-- Schedule talent change when UNIT_AURA event is triggered
 				Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
 			else
@@ -785,7 +791,7 @@ function Addon:SetTalentButtonReagentAttribute(button, forceDisable)
 	
 	local canChange, remainingTime = Addon:CanChangeTalents();
 	
-	if(self.db.global.UseReagents and not canChange and not forceDisable) then
+	if(self.db.global.UseReagents and not canChange and not forceDisable and not button.tierFree and button.isUnlocked) then
 		local reagents = Addon:GetTalentClearInfo();
 		local reagentID, reagentCount, reagentIcon = unpack(reagents[1]);
 		
