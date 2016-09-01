@@ -38,7 +38,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	tooltip:AddSeparator();
 	
 	for specIndex = 1, GetNumSpecializations() do
-		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex);
+		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, nil, nil, nil, UnitSex("player"));
 		
 		local color = "|cffeeeeee";
 		local activeText = "";
@@ -47,6 +47,8 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 		
 		if(isActiveSpecialization) then
 			activeText = "|cff00ff00Active|r";
+		elseif(Addon.db.char.PreviousSpec == specIndex) then
+			activeText = "|cff8ce2ffQuick-Switch|r";
 		end
 		
 		if(isActiveSpecialization or specIndex == Addon.db.char.PreviousSpec) then
@@ -61,16 +63,26 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 			
 			if(areSpecsUnlocked) then
 				tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
-					if(specIndex ~= GetSpecialization()) then
-						SetSpecialization(specIndex);
+					if(button == "LeftButton") then
+						if(specIndex ~= GetSpecialization()) then
+							SetSpecialization(specIndex);
+						end
+					else
+						if(specIndex ~= GetSpecialization()) then
+							Addon.db.char.PreviousSpec = specIndex;
+							Addon:UpdateSpecTooltips();
+						end
 					end
 				end);
 			end
 		end
 	end
 	
-	if(not isCursorTip and areSpecsUnlocked and (Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0)) then
-		tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
+	if(not isCursorTip and areSpecsUnlocked) then
+		if(Addon.db.char.PreviousSpec == nil or Addon.db.char.PreviousSpec == 0) then
+			tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
+		end
+		tooltip:AddLine(string.format("|cffffd200Right click to set for quick switch.|r"));
 	end
 	
 	if(areSpecsUnlocked) then
@@ -104,7 +116,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	if(areSpecsUnlocked) then
 		tooltip:AddLine(" ");
 		if(not isCursorTip and Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
-			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
+			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false, nil, UnitSex("player"));
 			tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	else
@@ -116,6 +128,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 		tooltip:AddLine("|cff00ff00Right click|r  View equipment sets.");
 	else
 		tooltip:AddLine(string.format("|cffffd200Left click a specialization to change to it.|r"));
+		tooltip:AddLine(string.format("|cffffd200Right click to set for quick switch.|r"));
 	end
 	
 	tooltip:SetAutoHideDelay(0.4, anchorFrame);

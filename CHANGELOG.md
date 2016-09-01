@@ -1,3 +1,7 @@
+## 2.1.2
+* Added option to right click in specialization tooltip to switch current quick switch specialization.
+* Fixed Tome of the Clear Mind usage level.
+
 ## 2.1.1
 * You can now link talents directly from FlashTalent by shift-clicking a talent.
 * Added notice on the talent tooltip when you have no tomes for auto-use.

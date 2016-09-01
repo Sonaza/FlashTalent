@@ -41,6 +41,11 @@ local TALENT_CLEAR_ITEMS = {
 	},
 	{
 		-- Over lvl 100 items
+		141640, -- Tome of Clear Mind
+		141333, -- Codex of Tranquil Mind
+	},
+	{
+		-- Lvl 110 items
 		141446, -- Tome of Tranquil Mind
 		141333, -- Codex of Tranquil Mind
 	},
@@ -77,6 +82,7 @@ function Addon:OnEnable()
 	Addon:UpdateTabIcons();
 	
 	Addon:RegisterEvent("PLAYER_REGEN_DISABLED");
+	Addon:RegisterEvent("PLAYER_REGEN_ENABLED");
 	
 	Addon:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
 	Addon:RegisterEvent("PET_SPECIALIZATION_CHANGED");
@@ -84,9 +90,7 @@ function Addon:OnEnable()
 	Addon:RegisterEvent("PLAYER_TALENT_UPDATE");
 	Addon:RegisterEvent("PLAYER_PVP_TALENT_UPDATE", "PLAYER_TALENT_UPDATE");
 	
-	if(UnitLevel("player") < MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]) then
-		Addon:RegisterEvent("PLAYER_LEVEL_UP");
-	end
+	Addon:RegisterEvent("PLAYER_LEVEL_UP");
 	
 	if(UnitFactionGroup("player") == "Neutral") then
 		Addon:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
@@ -439,9 +443,19 @@ function FlashTalentFrame_OnMouseUp(self)
 end
 
 function Addon:PLAYER_REGEN_DISABLED()
+	self.EnteringCombat = true;
+	
 	if(not self.db.global.StickyWindow) then
 		FlashTalentFrame:Hide();
 	end
+	
+	Addon:UpdateReagentCount();
+	
+	self.EnteringCombat = false;
+end
+
+function Addon:PLAYER_REGEN_ENABLED()
+	Addon:UpdateReagentCount();
 end
 
 ----------------------------------------------------------
@@ -649,7 +663,7 @@ end
 
 function Addon:BAG_UPDATE_DELAYED()
 	if(InCombatLockdown()) then return end
-	Addon:UpdateReagentCount()
+	Addon:UpdateReagentCount();
 end
 
 function Addon:PLAYER_UPDATE_RESTING()
@@ -1183,7 +1197,7 @@ function FlashTalentFrameHonorLevel_OnEnter(self)
 		GameTooltip:Show();
 		
 		-- Hide TipTac icon
-		if(GameTooltip.ttIcon) then
+		if(GameTooltip.ttIcon and Addon.db.global.AnchorSide == "LEFT") then
 			GameTooltip.ttIcon:Hide();
 		end
 	
@@ -1340,10 +1354,18 @@ end
 
 function Addon:GetTalentClearInfo()
 	local level = UnitLevel("player");
-	local selection = math.floor( (UnitLevel("player")-1) / 100 ) + 1;
+	local items;
+	
+	if(level == 110) then
+		items = TALENT_CLEAR_ITEMS[3];
+	elseif(level > 100) then
+		items = TALENT_CLEAR_ITEMS[2];
+	else
+		items = TALENT_CLEAR_ITEMS[1];
+	end
 	
 	local info = {};
-	for _, itemID in ipairs(TALENT_CLEAR_ITEMS[selection]) do
+	for _, itemID in ipairs(items) do
 		tinsert(info, {
 			itemID, GetItemCount(itemID), GetItemIcon(itemID),
 		});
@@ -1353,6 +1375,11 @@ function Addon:GetTalentClearInfo()
 end
 
 function Addon:UpdateReagentCount()
+	if(self.EnteringCombat or InCombatLockdown()) then
+		FlashTalentFrameReagents.text:SetText(string.format("|cffff3000Combat|r"));
+		return;
+	end
+	
 	local canChange, remainingTime = Addon:CanChangeTalents();
 	if(canChange and remainingTime) then
 		FlashTalentFrameReagents.text:SetText(string.format("|cff77ff00%s|r", Addon:FormatTime(remainingTime)));
