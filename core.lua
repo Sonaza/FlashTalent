@@ -54,7 +54,7 @@ local TALENT_CLEAR_ITEMS = {
 local TALENT_CLEAR_BUFFS = {
 	{ id = 227565, },            -- Codex of Clear Mind (100) 
 	{ id = 226234, },            -- Codex of Tranquil Mind
-	{ id = 227563, lvl = 100 },  -- Tome of Clear Mind (100)
+	{ id = 227563, lvl = 109 },  -- Tome of Clear Mind (109)
 	{ id = 227041 },             -- Tome of Tranquil Mind
 };
 
@@ -749,17 +749,19 @@ function FlashTalentButtonTemplate_PostClick(self)
 		return;
 	end
 	
-	if(self.isUnlocked and self.talentID) then
-		if(IsModifiedClick("CHATLINK")) then
-			Addon:HandleTalentChatLink(self);
+	if(self.talentID and IsModifiedClick("CHATLINK")) then
+		Addon:HandleTalentChatLink(self);
+	end
+	
+	if(UnitIsDeadOrGhost("player")) then return end
+	
+	if(self.isUnlocked) then
+		local canChange, remainingTime = Addon:CanChangeTalents();
+		if(not canChange and Addon.db.global.UseReagents and not self.tierFree) then
+			-- Schedule talent change when UNIT_AURA event is triggered
+			Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
 		else
-			local canChange, remainingTime = Addon:CanChangeTalents();
-			if(not canChange and Addon.db.global.UseReagents and not self.tierFree) then
-				-- Schedule talent change when UNIT_AURA event is triggered
-				Addon:ScheduleTalentChange(self.talentCategory, self.talentID);
-			else
-				Addon:LearnTalent(self.talentCategory, self.talentID);
-			end
+			Addon:LearnTalent(self.talentCategory, self.talentID);
 		end
 	end
 end
@@ -946,7 +948,7 @@ function Addon:UpdatePVPTalentFrame()
 			button.isSelected       = isSelected;
 			button.spellName        = spellName;
 			
-			button.tierFree         = isFree;
+			button.tierFree         = isRowFree;
 			button.isUnlocked       = isUnlocked;
 			
 			Addon:SetTalentButtonReagentAttribute(button, not isUnlocked or isSelected);

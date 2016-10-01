@@ -1,3 +1,8 @@
+## 2.1.3
+* Fixed automatic tome consume for PvP talents even when setting them should be free.
+* Fixed problem where using Tome of the Clear Mind between levels 101 and 109 wouldn't be recognised properly.
+* Fixed chat linking locked talents.
+
 ## 2.1.2
 * Added option to right click in specialization tooltip to switch current quick switch specialization.
 * Fixed Tome of the Clear Mind usage level.
