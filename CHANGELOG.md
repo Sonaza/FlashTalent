@@ -1,3 +1,6 @@
+## 2.1.4
+* TOC bump for 7.1.0.
+
 ## 2.1.3
 * Fixed automatic tome consume for PvP talents even when setting them should be free.
 * Fixed problem where using Tome of the Clear Mind between levels 101 and 109 wouldn't be recognised properly.
