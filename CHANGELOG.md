@@ -1,5 +1,6 @@
 ## 2.1.4
 * TOC bump for 7.1.0.
+* Minor fixes.
 
 ## 2.1.3
 * Fixed automatic tome consume for PvP talents even when setting them should be free.

@@ -1177,8 +1177,6 @@ function FlashTalentFrameHonorLevel_OnEnter(self)
 		
 		if(honor < honorMax and not CanPrestige()) then
 			self.tooltip:AddLine(string.format("%d honor to next level", honorMax - honor), 1, 1, 1, true);
-		elseif(tCanPrestige()) then
-			self.tooltip:AddLine("|cffffd200Prestige available!|r", 1, 1, 1, true);
 		end
 		
 		GameTooltip:SetOwner(self, "ANCHOR_NONE");
@@ -1190,23 +1188,25 @@ function FlashTalentFrameHonorLevel_OnEnter(self)
 			GameTooltip:SetPoint("TOPLEFT", self.tooltip, "BOTTOMLEFT", 0, 0);
 		end
 		
-		reward:SetTooltip();
+		if(reward) then
+			reward:SetTooltip();
+			
+			if(GameTooltipTextLeft1 and GameTooltipTextLeft1:GetText()) then
+				GameTooltipTextLeft1:SetText("|cffffd200Next Reward|r|n|n" .. GameTooltipTextLeft1:GetText());
+			end
+			
+			GameTooltip:Show();
+			
+			-- Hide TipTac icon
+			if(GameTooltip.ttIcon and Addon.db.global.AnchorSide == "LEFT") then
+				GameTooltip.ttIcon:Hide();
+			end
 		
-		if(GameTooltipTextLeft1 and GameTooltipTextLeft1:GetText()) then
-			GameTooltipTextLeft1:SetText("|cffffd200Next Reward|r|n|n" .. GameTooltipTextLeft1:GetText());
+			-- Super pretty hack to get the tooltip exactly as wide as gametooltip without having wonky text
+			self.tooltip:SetMinimumWidth(GameTooltip:GetWidth());
+			self.tooltip:Show();
+			self.tooltip:SetMinimumWidth(GameTooltip:GetWidth() - (self.tooltip:GetWidth() - GameTooltip:GetWidth()));
 		end
-		
-		GameTooltip:Show();
-		
-		-- Hide TipTac icon
-		if(GameTooltip.ttIcon and Addon.db.global.AnchorSide == "LEFT") then
-			GameTooltip.ttIcon:Hide();
-		end
-	
-		-- Super pretty hack to get the tooltip exactly as wide as gametooltip without having wonky text
-		self.tooltip:SetMinimumWidth(GameTooltip:GetWidth());
-		self.tooltip:Show();
-		self.tooltip:SetMinimumWidth(GameTooltip:GetWidth() - (self.tooltip:GetWidth() - GameTooltip:GetWidth()));
 	else
 		self.tooltip:AddLine(string.format("|cffffffffHonor unlocks at level %d.", HONOR_LEVEL_UNLOCK));
 	end
