@@ -1,3 +1,6 @@
+## 2.1.5
+* Fixed error with honor talents after having reached prestige rank 1 or higher.
+
 ## 2.1.4
 * TOC bump for 7.1.0.
 * Minor fixes.

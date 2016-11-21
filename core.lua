@@ -900,8 +900,9 @@ function Addon:UpdatePVETalentFrame()
 	end
 end
 
-function Addon:IsPVPTalentUnlocked(honorLevel, row, column)
-	return honorLevel >= PVP_TALENT_LEVELS[row][column], PVP_TALENT_LEVELS[row][column];
+function Addon:IsPVPTalentUnlocked(prestigeLevel, honorLevel, row, column)
+	local realHonorLevel = prestigeLevel * 50 + honorLevel;
+	return realHonorLevel >= PVP_TALENT_LEVELS[row][column], PVP_TALENT_LEVELS[row][column];
 end
 
 function Addon:UpdatePVPTalentFrame()
@@ -910,6 +911,7 @@ function Addon:UpdatePVPTalentFrame()
 	FlashTalentFrameTalentsTier1:Hide();
 	Addon:UpdatePVPXPBar();
 	
+	local prestigeLevel = UnitPrestige("player");
 	local honorLevel = UnitHonorLevel("player");
 	
 	FlashTalentFrameTalentsHonorLevel.label.text:SetText(string.format("|cffffd200Level|r %s", honorLevel));
@@ -929,7 +931,7 @@ function Addon:UpdatePVPTalentFrame()
 		for column = 1, 3 do
 			local button = tierFrame["talent" .. column];
 			
-			local isUnlocked, unlockLevel = Addon:IsPVPTalentUnlocked(honorLevel, tier-1, column);
+			local isUnlocked, unlockLevel = Addon:IsPVPTalentUnlocked(prestigeLevel, honorLevel, tier-1, column);
 			
 			local talentID, spellName, icon, isSelected, available, spellID = GetPvpTalentInfo(tier-1, column, group);
 			local isRowFree = GetPvpTalentRowSelectionInfo(tier-1);
