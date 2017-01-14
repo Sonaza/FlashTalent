@@ -227,6 +227,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		tooltip:SetPoint(unpack(positionData));
 	end
 	
+	tooltip:SetClampedToScreen(true);
 	tooltip:Show();
 	
 	return tooltip;

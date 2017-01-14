@@ -109,7 +109,7 @@ function Addon:DataBroker_OnEnter(parent)
 	parent.tooltip:AddSeparator();
 	
 	for specIndex = 1, GetNumSpecializations() do
-		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex);
+		local id, name, description, icon, role = GetSpecializationInfo(specIndex);
 		
 		local color = "|cffeeeeee";
 		local activeText = "";
@@ -153,7 +153,7 @@ function Addon:DataBroker_OnEnter(parent)
 			parent.tooltip:AddSeparator();
 			
 			for specIndex = 1, GetNumSpecializations(false, true) do
-				local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+				local id, name, description, icon, role = GetSpecializationInfo(specIndex, false, true);
 				
 				local activeText = "";
 				
@@ -182,7 +182,7 @@ function Addon:DataBroker_OnEnter(parent)
 	
 	if(areSpecsUnlocked) then
 		if(Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
-			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
+			local _, name, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false);
 			parent.tooltip:AddLine(string.format("|cff00ff00Middle click|r  Switch back to |cffffdd00%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	end
@@ -195,5 +195,6 @@ function Addon:DataBroker_OnEnter(parent)
 		Addon.DataBrokerTooltip = nil;
 	end
 	
+	parent.tooltip:SetClampedToScreen(true);
 	parent.tooltip:Show();
 end

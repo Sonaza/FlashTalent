@@ -268,9 +268,9 @@ end
 
 function Addon:GetSpecializationInfoByName(specName)
 	for specIndex = 1, GetNumSpecializations() do
-		local id, name, description, icon, background, role, primaryStat = GetSpecializationInfo(specIndex);
+		local id, name, description, icon, role, primaryStat = GetSpecializationInfo(specIndex);
 		if(name == specName) then
-			return id, name, description, icon, background, role, primaryStat;
+			return id, name, description, icon, role, primaryStat;
 		end
 	end
 end

@@ -38,7 +38,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	tooltip:AddSeparator();
 	
 	for specIndex = 1, GetNumSpecializations() do
-		local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, nil, nil, nil, UnitSex("player"));
+		local id, name, description, icon, role = GetSpecializationInfo(specIndex, nil, nil, nil, UnitSex("player"));
 		
 		local color = "|cffeeeeee";
 		local activeText = "";
@@ -94,7 +94,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 			tooltip:AddSeparator();
 			
 			for specIndex = 1, GetNumSpecializations(false, true) do
-				local id, name, description, icon, background, role = GetSpecializationInfo(specIndex, false, true);
+				local id, name, description, icon, role = GetSpecializationInfo(specIndex, false, true);
 				
 				local activeText = "";
 				
@@ -116,7 +116,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	if(areSpecsUnlocked) then
 		tooltip:AddLine(" ");
 		if(not isCursorTip and Addon.db.char.PreviousSpec ~= nil and Addon.db.char.PreviousSpec ~= 0) then
-			local _, name, _, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false, nil, UnitSex("player"));
+			local _, name, _, _, role = GetSpecializationInfo(Addon.db.char.PreviousSpec, false, false, nil, UnitSex("player"));
 			tooltip:AddLine(string.format("|cff00ff00Left click|r  Switch back to |cffffd200%s|r %s", name, FLASHTALENT_ICON_ROLES[role]));
 		end
 	else
@@ -136,6 +136,7 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 		tooltip = nil;
 	end
 	
+	tooltip:SetClampedToScreen(true);
 	tooltip:Show();
 end
 
