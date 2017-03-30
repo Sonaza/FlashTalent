@@ -1,3 +1,6 @@
+## 2.1.7
+* TOC bump for 7.2.0.
+
 ## 2.1.6
 * Fixed string formatting error caused by changed WoW API function return values.
 * Clamped data broker tooltips to stay within screen area.
