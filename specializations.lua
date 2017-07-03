@@ -187,29 +187,42 @@ function Addon:ACTIVE_TALENT_GROUP_CHANGED(event)
 	Addon:UpdateTalentFrame();
 	Addon:UpdateSpecTooltips();
 	
-	if(self.db.char.AutoSwitchGearSet) then
-		local activeSpec = GetSpecialization();
+	local activeSpec = GetSpecialization();
+	
+	if(playerPreviousSpecialization ~= activeSpec) then
+		playerPreviousSpecialization = activeSpec;
 		
-		if(playerPreviousSpecialization ~= activeSpec) then
-			playerPreviousSpecialization = activeSpec;
+		local assignedSpecFound = false;
+		
+		local equipmentSetIDs = C_EquipmentSet.GetEquipmentSetIDs() or {};
+		for index, setID in ipairs(equipmentSetIDs) do
+			if(C_EquipmentSet.GetEquipmentSetAssignedSpec(setID) == activeSpec) then
+				assignedSpecFound = true;
+				break;
+			end
+		end
+		
+		if(not assignedSpecFound) then
+			local _, activeSpecName = GetSpecializationInfo(activeSpec, nil, nil, nil, UnitSex("player"));
 			
-			local setName;
-			if(self.db.char.SpecSets[activeSpec]) then
-				setName = self.db.char.SpecSets[activeSpec];
+			local foundSetID;
+			for index, setID in ipairs(equipmentSetIDs) do
+				local setName = C_EquipmentSet.GetEquipmentSetInfo(setID);
+				if(activeSpecName == setName) then
+					foundSetID = setID;
+					break;
+				end
 			end
 			
-			if(not setName or not GetEquipmentSetInfoByName(setName)) then
-				local _, specName = GetSpecializationInfo(activeSpec);
-				setName = specName;
-			end
-			
-			local icon, setID, isEquipped, numItems, numEquipped, unknown, numMissing, numIgnored = GetEquipmentSetInfoByName(setName);
-			if(icon ~= nil and not isEquipped) then
-				if(numMissing == 0) then
-					local latency = select(4, GetNetStats());
-					C_Timer.After(0.3 + latency / 1000, function()
-						UseEquipmentSet(setName);
-					end);
+			if(foundSetID) then
+				local setName, icon, _, isEquipped, numItems, numEquipped, numInventory, numMissing, numIgnored = C_EquipmentSet.GetEquipmentSetInfo(foundSetID);
+				if(icon ~= nil and not isEquipped) then
+					if(numMissing == 0) then
+						local latency = select(4, GetNetStats());
+						C_Timer.After(0.3 + latency / 1000, function()
+							C_EquipmentSet.UseEquipmentSet(foundSetID);
+						end);
+					end
 				end
 			end
 		end

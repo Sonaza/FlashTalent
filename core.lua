@@ -116,13 +116,13 @@ function Addon:OnEnable()
 	
 	CreateFrame("Frame"):SetScript("OnUpdate", function(self, elapsed) Addon:OnUpdate(elapsed) end);
 	
-	hooksecurefunc("ModifyEquipmentSet", function(oldName, newName)
-		for specIndex, setName in pairs(Addon.db.char.SpecSets) do
-			if(setName == oldName) then
-				Addon.db.char.SpecSets[specIndex] = newName;
-			end
-		end
-	end);
+	-- hooksecurefunc("ModifyEquipmentSet", function(oldName, newName)
+	-- 	for specIndex, setName in pairs(Addon.db.char.SpecSets) do
+	-- 		if(setName == oldName) then
+	-- 			Addon.db.char.SpecSets[specIndex] = newName;
+	-- 		end
+	-- 	end
+	-- end);
 	
 	if(not self.db.global.StickyWindow) then
 		tinsert(UISpecialFrames, "FlashTalentFrame");
@@ -266,10 +266,21 @@ function Addon:AddScriptedTooltipLine(tooltip, text, onClick, onEnter, onLeave)
 	return lineIndex;
 end
 
-function Addon:GetSpecializationInfoByName(specName)
+function Addon:GetSpecializationInfoBySpecName(specName)
+	local assignedSpecs = {};
+	local equipmentSetIDs = C_EquipmentSet.GetEquipmentSetIDs();
+	if(equipmentSetIDs) then
+		for index, setID in ipairs(equipmentSetIDs) do
+			local assignedSpecID = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID);
+			if(assignedSpecID) then
+				assignedSpecs[assignedSpecID] = true;
+			end
+		end
+	end
+	
 	for specIndex = 1, GetNumSpecializations() do
-		local id, name, description, icon, role, primaryStat = GetSpecializationInfo(specIndex);
-		if(name == specName) then
+		local id, name, description, icon, role, primaryStat = GetSpecializationInfo(specIndex, nil, nil, nil, UnitSex("player"));
+		if(not assignedSpecs[specIndex] and name == specName) then
 			return id, name, description, icon, role, primaryStat;
 		end
 	end
@@ -1451,7 +1462,7 @@ function FlashTalentReagentFrame_OnEnter(self)
 		local name, link, quality = GetItemInfo(itemID);
 		
 		GameTooltip:AddDoubleLine(
-			string.format("%s |cffffffff%dx|r %s", FLASHTALENT_ICON_PATTERN:format(icon), count, name),
+			string.format("%s |cffffffff%dx|r %s", FLASHTALENT_ICON_PATTERN:format(icon), count or 0, name or ""),
 			string.format("|cff00ff00%s to use|r", clicks[index])
 		);
 	end

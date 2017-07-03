@@ -11,25 +11,25 @@ local LibStub = LibStub;
 local AceDB = LibStub("AceDB-3.0");
 local LibQTip = LibStub("LibQTip-1.0");
 
-function Addon:EQUIPMENT_SWAP_FINISHED(event, success, setName)
+function Addon:EQUIPMENT_SWAP_FINISHED(event, success, setID)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and FlashTalentSpecButton.tooltip.category == 2) then
-		Addon:RefreshItemSetsMenu(setName);
+		Addon:RefreshItemSetsMenu(setID);
 	end
 	
 	if(success) then
-		PaperDollEquipmentManagerPane.selectedSetName = setName;
+		PaperDollEquipmentManagerPane.selectedSetID = setID;
 		PaperDollFrame_ClearIgnoredSlots();
-		PaperDollFrame_IgnoreSlotsForSet(setName);
+		PaperDollFrame_IgnoreSlotsForSet(setID);
 		PaperDollEquipmentManagerPane_Update();
 		
 		Addon:UpdateDatabrokerText();
 	end
 end
 
-function Addon:UpdateEquipmentSet(setName)
+function Addon:UpdateEquipmentSet(setID)
 	PaperDollFrame_ClearIgnoredSlots();
-	PaperDollFrame_IgnoreSlotsForSet(setName);
-	SaveEquipmentSet(setName);
+	PaperDollFrame_IgnoreSlotsForSet(setID);
+	C_EquipmentSet.SaveEquipmentSet(setID);
 end
 
 function Addon:OpenItemSetsMenuAtCursor(anchorFrame)
@@ -41,11 +41,11 @@ function Addon:OpenItemSetsMenuAtCursor(anchorFrame)
 	end
 end
 
-function Addon:RefreshItemSetsMenu(setName)
-	Addon:OpenItemSetsMenu(Addon.ItemSetsMenuParent, true, setName);
+function Addon:RefreshItemSetsMenu(setID)
+	Addon:OpenItemSetsMenu(Addon.ItemSetsMenuParent, true, setID);
 end
 
-function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
+function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, changedSetID)
 	if(FlashTalentSpecButton.tooltip and FlashTalentSpecButton.tooltip:IsVisible() and not forceRefresh) then return end
 	
 	local positionData = {};
@@ -61,31 +61,28 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	tooltip:Clear();
 	tooltip:AddHeader("|cffffd200Equipment Sets|r");
 	
-	local numEquipmentSets = GetNumEquipmentSets();
-	if(numEquipmentSets > 0) then
-		local specSets = {};
-		for specIndex, setName in pairs(Addon.db.char.SpecSets) do
-			specSets[setName] = specIndex;
-		end
-		
-		for index = 1, numEquipmentSets do
+	local equipmentSetIDs = C_EquipmentSet.GetEquipmentSetIDs();
+	local numEquipmentSets = C_EquipmentSet.GetNumEquipmentSets();
+	if(equipmentSetIDs and numEquipmentSets > 0) then
+		for index, setID in ipairs(equipmentSetIDs) do
 			local lineIndex;
-			local name, icon, setID, isEquipped, numItems, numEquipped, numInventory, numMissing, numIgnored = GetEquipmentSetInfo(index);
+			local setName, icon, _, isEquipped, numItems, numEquipped, numInventory, numMissing, numIgnored = C_EquipmentSet.GetEquipmentSetInfo(setID);
 			
 			if(icon == nil) then
 				icon = "Interface\\icons\\INV_Misc_QuestionMark";
 			end
 			
-			if(setName) then
-				isEquipped = (setName == name);
+			if(changedSetID) then
+				isEquipped = (changedSetID == setID);
 			end
 			
 			local specSetName = "";
-			if(specSets[name]) then
-				local _, specName, _, specIcon = GetSpecializationInfo(specSets[name]);
+			local assignedSpecID = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID);
+			if(assignedSpecID) then
+				local _, specName, _, specIcon = GetSpecializationInfo(assignedSpecID, nil, nil, nil, UnitSex("player"));
 				specSetName = string.format(" |cffffee22%s %s|r", strtrim(FLASHTALENT_ICON_PATTERN:format(specIcon)), specName);
 			else
-				local _, specName, _, specIcon = Addon:GetSpecializationInfoByName(name);
+				local _, specName, _, specIcon = Addon:GetSpecializationInfoBySpecName(setName);
 				if(specName) then
 					specSetName = string.format(" |cffaaaaaa%s %s|r", strtrim(FLASHTALENT_ICON_PATTERN:format(specIcon)), specName);
 				end
@@ -93,24 +90,24 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			
 			local equipmentTitle;
 			if(isEquipped) then
-				lineIndex = tooltip:AddLine(string.format("%s |cff33ff00%s (equipped)|r", FLASHTALENT_ICON_PATTERN:format(icon), name), specSetName);
+				lineIndex = tooltip:AddLine(string.format("%s |cff33ff00%s (equipped)|r", FLASHTALENT_ICON_PATTERN:format(icon), setName), specSetName);
 			elseif(numMissing > 0) then
-				lineIndex = tooltip:AddLine(string.format("%s |cffff2222%s|r (%d missing)", FLASHTALENT_ICON_PATTERN:format(icon), name, numMissing), specSetName);
+				lineIndex = tooltip:AddLine(string.format("%s |cffff2222%s|r (%d missing)", FLASHTALENT_ICON_PATTERN:format(icon), setName, numMissing), specSetName);
 			else
-				lineIndex = tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), specSetName);
+				lineIndex = tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), setName), specSetName);
 			end
 			
 			tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
 				GameTooltip:SetOwner(self, "ANCHOR_LEFT");
-				GameTooltip:SetEquipmentSet(name);
+				GameTooltip:SetEquipmentSet(setID);
 				GameTooltip:AddLine(" ");
 				GameTooltip:AddLine("Left click  |cffffffffSwitch to this set", 0, 1, 0);
 				GameTooltip:AddLine("Right click  |cffffffffRename the set", 0, 1, 0);
 				GameTooltip:AddLine("Shift Middle click  |cffffffffUpdate set", 0, 1, 0);
 				GameTooltip:AddLine(" ");
 				
-				if(not specSets[name] or specSets[name] ~= GetSpecialization()) then
-					local _, specName, _, specIcon = GetSpecializationInfo(GetSpecialization());
+				if(not assignedSpecID or assignedSpecID ~= GetSpecialization()) then
+					local _, specName, _, specIcon = GetSpecializationInfo(GetSpecialization(), nil, nil, nil, UnitSex("player"));
 					GameTooltip:AddLine(string.format("Ctrl Shift Right click  |cffffffffTag this set for |cffffffff%s %s|r", FLASHTALENT_ICON_PATTERN:format(specIcon), specName), 0, 1, 0);
 				else
 					GameTooltip:AddLine("Ctrl Shift Right click  |cffffffffRemove spec tag from this set", 0, 1, 0);
@@ -126,31 +123,29 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 			tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 				if(IsShiftKeyDown() and IsControlKeyDown() and button == "RightButton") then
 					local activeSpec = GetSpecialization();
-					if(Addon.db.char.SpecSets[activeSpec] == name) then
-						Addon.db.char.SpecSets[activeSpec] = nil;
+					
+					local assignedSpecID = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID);
+					if(assignedSpecID ~= activeSpec) then
+						C_EquipmentSet.AssignSpecToEquipmentSet(setID, activeSpec);
 					else
-						Addon.db.char.SpecSets[activeSpec] = name;
-						
-						for specIndex, setName in pairs(Addon.db.char.SpecSets) do
-							if(specIndex ~= activeSpec and setName == name) then
-								Addon.db.char.SpecSets[specIndex] = nil;
-							end
-						end
+						C_EquipmentSet.UnassignEquipmentSetSpec(setID);
 					end
+					PaperDollEquipmentManagerPane_Update(true);
 					
 					Addon:RefreshItemSetsMenu();
+					
 				elseif(IsShiftKeyDown() and button == "MiddleButton") then
-					Addon:UpdateEquipmentSet(name);
+					Addon:UpdateEquipmentSet(setID);
 					
 				elseif(button == "RightButton") then
-					local icon, setID = GetEquipmentSetInfoByName(name);
-					
-					StaticPopup_Show("FLASHTALENT_RENAME_EQUIPMENT_SET", string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), nil, {
-						oldName = name,
+					local setName, icon = C_EquipmentSet.GetEquipmentSetInfo(setID);
+					StaticPopup_Show("FLASHTALENT_RENAME_EQUIPMENT_SET", string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), setName), nil, {
+						oldName = setName,
+						setID = setID,
 					});
 					
 				elseif(button == "LeftButton") then
-					UseEquipmentSet(name);
+					C_EquipmentSet.UseEquipmentSet(setID);
 				end
 			end);
 		end
@@ -161,35 +156,35 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 	
 	tooltip:AddSeparator();
 	
-	local lineIndex;
-	if(self.db.char.AutoSwitchGearSet) then
-		lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cff33ff00Enabled|r");
-	else
-		lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cffff2222Disabled|r");
-	end
+	-- local lineIndex;
+	-- if(self.db.char.AutoSwitchGearSet) then
+	-- 	lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cff33ff00Enabled|r");
+	-- else
+	-- 	lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cffff2222Disabled|r");
+	-- end
 	
-	tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
-		GameTooltip:SetOwner(self, "ANCHOR_LEFT", -6, 0);
-		GameTooltip:SetWidth(280);
+	-- tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
+	-- 	GameTooltip:SetOwner(self, "ANCHOR_LEFT", -6, 0);
+	-- 	GameTooltip:SetWidth(280);
 		
-		GameTooltip:AddLine("Automatic Gear Set Change");
-		GameTooltip:AddLine("Enable this to automatically change equipment set when changing specialization.", 1, 1, 1, true);
-		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
-		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffd200Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
+	-- 	GameTooltip:AddLine("Automatic Gear Set Change");
+	-- 	GameTooltip:AddLine("Enable this to automatically change equipment set when changing specialization.", 1, 1, 1, true);
+	-- 	GameTooltip:AddLine(" ");
+	-- 	GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
+	-- 	GameTooltip:AddLine(" ");
+	-- 	GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffd200Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
 		
-		GameTooltip:Show();
-	end);
+	-- 	GameTooltip:Show();
+	-- end);
 	
-	tooltip:SetLineScript(lineIndex, "OnLeave", function(self)
-		GameTooltip:Hide();
-	end);
+	-- tooltip:SetLineScript(lineIndex, "OnLeave", function(self)
+	-- 	GameTooltip:Hide();
+	-- end);
 	
-	tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self)
-		Addon.db.char.AutoSwitchGearSet = not Addon.db.char.AutoSwitchGearSet;
-		Addon:RefreshItemSetsMenu();
-	end);
+	-- tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self)
+	-- 	Addon.db.char.AutoSwitchGearSet = not Addon.db.char.AutoSwitchGearSet;
+	-- 	Addon:RefreshItemSetsMenu();
+	-- end);
 	
 	Addon:AddScriptedTooltipLine(tooltip, "|cffffd200Open Equipment Manager|r", function()
 		if(not PaperDollFrame:IsVisible()) then
@@ -198,15 +193,16 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, setName)
 		
 		PaperDollSidebarTab3:Click();
 		
-		local numEquipmentSets = GetNumEquipmentSets();
-		for setID = 1, numEquipmentSets do
-			local name, icon, setID, isEquipped = GetEquipmentSetInfo(setID);
+		local equipmentSetIDs = C_EquipmentSet.GetEquipmentSetIDs();
+		for index, setID in ipairs(equipmentSetIDs) do
+			local lineIndex;
+			local name, icon, _, isEquipped = C_EquipmentSet.GetEquipmentSetInfo(setID);
 			
 			if(isEquipped) then
-				PaperDollEquipmentManagerPane.selectedSetName = name;
+				PaperDollEquipmentManagerPane.selectedSetId = setID;
 				PaperDollFrame_ClearIgnoredSlots();
-				PaperDollFrame_IgnoreSlotsForSet(name);
-				PaperDollEquipmentManagerPane_Update();
+				PaperDollFrame_IgnoreSlotsForSet(setID);
+				PaperDollEquipmentManagerPane_Update(true);
 				
 				break;
 			end

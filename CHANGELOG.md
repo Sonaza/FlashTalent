@@ -1,3 +1,8 @@
+## 2.2.0
+* Updated equipment set features for patch 7.2.5.
+  * Addon now utilizes the native assigned specializations for sets. This also means your previous settings are now reset, sorry. You can reassign sets per spec as before or in Blizzard's equipment set menu.
+  * Same change also disables the ability to toggle automatic set changes. Appropriate sets are now always equipped when changing specs.
+
 ## 2.1.7
 * TOC bump for 7.2.0.
 
