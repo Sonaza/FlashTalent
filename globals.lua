@@ -56,19 +56,21 @@ StaticPopupDialogs["FLASHTALENT_RENAME_EQUIPMENT_SET"] = {
 	button1 = SAVE,
 	button2 = CANCEL,
 	OnAccept = function(self, data)
+		local setID = data.setID;
 		local oldName = data.oldName;
 		local newName = strtrim(self.editBox:GetText());
 		
-		if(oldName and newName and oldName ~= newName and strlen(newName) > 0) then
-			ModifyEquipmentSet(oldName, newName);
+		if(setID and oldName and newName and oldName ~= newName and strlen(newName) > 0) then
+			C_EquipmentSet.ModifyEquipmentSet(setID, newName);
 		end
 	end,
 	EditBoxOnEnterPressed = function(self, data)
+		local setID = data.setID;
 		local oldName = data.oldName;
 		local newName = strtrim(self:GetParent().editBox:GetText());
 		
-		if(oldName and newName and oldName ~= newName and strlen(newName) > 0) then
-			ModifyEquipmentSet(oldName, newName);
+		if(setID and oldName and newName and oldName ~= newName and strlen(newName) > 0) then
+			C_EquipmentSet.ModifyEquipmentSet(setID, newName);
 		end
 		
 		self:GetParent():Hide();

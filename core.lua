@@ -116,14 +116,6 @@ function Addon:OnEnable()
 	
 	CreateFrame("Frame"):SetScript("OnUpdate", function(self, elapsed) Addon:OnUpdate(elapsed) end);
 	
-	-- hooksecurefunc("ModifyEquipmentSet", function(oldName, newName)
-	-- 	for specIndex, setName in pairs(Addon.db.char.SpecSets) do
-	-- 		if(setName == oldName) then
-	-- 			Addon.db.char.SpecSets[specIndex] = newName;
-	-- 		end
-	-- 	end
-	-- end);
-	
 	if(not self.db.global.StickyWindow) then
 		tinsert(UISpecialFrames, "FlashTalentFrame");
 	end
