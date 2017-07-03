@@ -19,8 +19,6 @@ local defaults = {
 		AutoSwitchGearSet   = false,
 		OpenTalentTab       = 1,
 		PreviousSpec        = 0,
-		SpecSets            = {},
-		LegionSetReset      = false,
 	},
 	global = {
 		AskedKeybind        = false,
@@ -51,12 +49,6 @@ function Addon:OnInitialize()
 	self.db = AceDB:New("FlashTalentDB", defaults);
 	
 	Addon.CurrentTalentTab = self.db.char.OpenTalentTab;
-	
-	-- Because set indexing changed, the sets must be reset. Sorry!
-	if(not self.db.char.LegionSetReset) then
-		self.db.char.SpecSets = {};
-		self.db.char.LegionSetReset = true;
-	end
 end
 
 function Addon:UpdateFonts()
