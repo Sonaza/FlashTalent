@@ -17,6 +17,7 @@ local defaults = {
 	char = {
 		AskedKeybind        = false,
 		AutoSwitchGearSet   = false,
+		MatchSpecNames      = nil,
 		OpenTalentTab       = 1,
 		PreviousSpec        = 0,
 	},
@@ -49,6 +50,10 @@ function Addon:OnInitialize()
 	self.db = AceDB:New("FlashTalentDB", defaults);
 	
 	Addon.CurrentTalentTab = self.db.char.OpenTalentTab;
+	
+	if(self.db.char.MatchSpecNames == nil) then
+		self.db.char.MatchSpecNames = self.db.char.AutoSwitchGearSet;
+	end
 end
 
 function Addon:UpdateFonts()

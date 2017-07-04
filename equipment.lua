@@ -81,7 +81,7 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, changedSetID)
 			if(assignedSpecID) then
 				local _, specName, _, specIcon = GetSpecializationInfo(assignedSpecID, nil, nil, nil, UnitSex("player"));
 				specSetName = string.format(" |cffffee22%s %s|r", strtrim(FLASHTALENT_ICON_PATTERN:format(specIcon)), specName);
-			else
+			elseif(Addon.db.char.MatchSpecNames) then
 				local _, specName, _, specIcon = Addon:GetSpecializationInfoBySpecName(setName);
 				if(specName) then
 					specSetName = string.format(" |cffaaaaaa%s %s|r", strtrim(FLASHTALENT_ICON_PATTERN:format(specIcon)), specName);
@@ -156,35 +156,33 @@ function Addon:OpenItemSetsMenu(anchorFrame, forceRefresh, changedSetID)
 	
 	tooltip:AddSeparator();
 	
-	-- local lineIndex;
-	-- if(self.db.char.AutoSwitchGearSet) then
-	-- 	lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cff33ff00Enabled|r");
-	-- else
-	-- 	lineIndex = tooltip:AddLine("|cffffd200Auto Switch Gear Set|r", "|cffff2222Disabled|r");
-	-- end
+	local lineIndex;
+	if(self.db.char.MatchSpecNames) then
+		lineIndex = tooltip:AddLine("|cffffd200Match Spec Names|r", "|cff33ff00Enabled|r");
+	else
+		lineIndex = tooltip:AddLine("|cffffd200Match Spec Names|r", "|cffff2222Disabled|r");
+	end
 	
-	-- tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
-	-- 	GameTooltip:SetOwner(self, "ANCHOR_LEFT", -6, 0);
-	-- 	GameTooltip:SetWidth(280);
+	tooltip:SetLineScript(lineIndex, "OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_LEFT", -6, 0);
+		GameTooltip:SetWidth(280);
 		
-	-- 	GameTooltip:AddLine("Automatic Gear Set Change");
-	-- 	GameTooltip:AddLine("Enable this to automatically change equipment set when changing specialization.", 1, 1, 1, true);
-	-- 	GameTooltip:AddLine(" ");
-	-- 	GameTooltip:AddLine("If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
-	-- 	GameTooltip:AddLine(" ");
-	-- 	GameTooltip:AddLine("Alternatively you can also tag an equipment set for a specialization and still use a separate name if you |cffffd200Ctrl Shift Right click|r the set name in the list. Tagged sets have priority.", 1, 1, 1, true);
+		GameTooltip:AddLine("Match Spec Names");
+		GameTooltip:AddLine("Enable this to match set names to spec names. If an equipment set with the spec name exists it will be automatically equipped if no items are missing.", 1, 1, 1, true);
+		GameTooltip:AddLine(" ");
+		GameTooltip:AddLine("You can also tag an equipment set for a specialization by |cffffd200Ctrl Shift Right clicking|r the set name in the list. Tagged sets will be always switched to and have priority.", 1, 1, 1, true);
 		
-	-- 	GameTooltip:Show();
-	-- end);
+		GameTooltip:Show();
+	end);
 	
-	-- tooltip:SetLineScript(lineIndex, "OnLeave", function(self)
-	-- 	GameTooltip:Hide();
-	-- end);
+	tooltip:SetLineScript(lineIndex, "OnLeave", function(self)
+		GameTooltip:Hide();
+	end);
 	
-	-- tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self)
-	-- 	Addon.db.char.AutoSwitchGearSet = not Addon.db.char.AutoSwitchGearSet;
-	-- 	Addon:RefreshItemSetsMenu();
-	-- end);
+	tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self)
+		Addon.db.char.MatchSpecNames = not Addon.db.char.MatchSpecNames;
+		Addon:RefreshItemSetsMenu();
+	end);
 	
 	Addon:AddScriptedTooltipLine(tooltip, "|cffffd200Open Equipment Manager|r", function()
 		if(not PaperDollFrame:IsVisible()) then
