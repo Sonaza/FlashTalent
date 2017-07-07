@@ -20,7 +20,7 @@ function Addon:EQUIPMENT_SWAP_FINISHED(event, success, setID)
 		PaperDollEquipmentManagerPane.selectedSetID = setID;
 		PaperDollFrame_ClearIgnoredSlots();
 		PaperDollFrame_IgnoreSlotsForSet(setID);
-		PaperDollEquipmentManagerPane_Update();
+		PaperDollEquipmentManagerPane_Update(true);
 		
 		Addon:UpdateDatabrokerText();
 	end

@@ -1,5 +1,6 @@
 ## 2.2.1
 * Restored option to choose if you wish to match specialization names to set names for automatic switching.
+* Fixed another equipment set bug.
 
 ## 2.2.0
 * Updated equipment set features required by game patch changes.
