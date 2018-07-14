@@ -1,6 +1,5 @@
 <Bindings>
 	<Binding name="CLICK FlashTalentFrameToggler:LeftButton" header="FLASHTALENT" category="ADDONS"/>
-	<Binding name="CLICK FlashTalentFrameToggler:RightButton" category="ADDONS"/>
 	<Binding name="FLASHTALENT_CHANGE_DUALSPEC" category="ADDONS">
 		if(not InCombatLockdown()) then FlashTalent:ChangeDualSpec(); end
 	</Binding>

@@ -26,6 +26,8 @@ end
 function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 	if(not tooltip) then return end
 	
+	self.specTooltipFrame = tooltip;
+	
 	tooltip:Clear();
 	tooltip:ClearAllPoints();
 	tooltip:SetPoint("BOTTOMLEFT", anchorFrame, "TOPLEFT", 0, -2);
@@ -51,7 +53,9 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 			activeText = "|cff8ce2ffQuick-Switch|r";
 		end
 		
-		if(isActiveSpecialization or specIndex == Addon.db.char.PreviousSpec) then
+		if(isActiveSpecialization) then
+			color = "|cff00ff00";
+		elseif(Addon.db.char.PreviousSpec == specIndex) then
 			color = "|cff8ce2ff";
 		end
 		
@@ -96,13 +100,15 @@ function Addon:OpenSpecializationsMenu(anchorFrame, tooltip, isCursorTip)
 			for specIndex = 1, GetNumSpecializations(false, true) do
 				local id, name, description, icon, role = GetSpecializationInfo(specIndex, false, true);
 				
+				local color = "";
 				local activeText = "";
 				
 				if(specIndex == GetSpecialization(false, true)) then
+					color = "|cff00ff00";
 					activeText = "|cff00ff00Active|r";
 				end
 				
-				local lineIndex = tooltip:AddLine(string.format("%s %s", FLASHTALENT_ICON_PATTERN:format(icon), name), activeText);
+				local lineIndex = tooltip:AddLine(string.format("%s %s%s", FLASHTALENT_ICON_PATTERN:format(icon), color, name), activeText);
 				
 				tooltip:SetLineScript(lineIndex, "OnMouseUp", function(self, _, button)
 					if(specIndex ~= GetSpecialization(false, true)) then

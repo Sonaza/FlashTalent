@@ -17,8 +17,7 @@ FLASHTALENT_ICON_ROLES = {
 };
 
 BINDING_HEADER_FLASHTALENT = "FlashTalent";
-_G["BINDING_NAME_CLICK FlashTalentFrameToggler:LeftButton"] = "Toggle FlashTalent Class Talents";
-_G["BINDING_NAME_CLICK FlashTalentFrameToggler:RightButton"] = "Toggle FlashTalent Honor Talents";
+_G["BINDING_NAME_CLICK FlashTalentFrameToggler:LeftButton"] = "Toggle FlashTalent Talents";
 _G["BINDING_NAME_FLASHTALENT_CHANGE_DUALSPEC"] = "Quick Switch to Previous Spec";
 _G["BINDING_NAME_FLASHTALENT_OPEN_ITEM_SETS_MENU"] = "Open Menus at Cursor";
 
@@ -28,7 +27,6 @@ StaticPopupDialogs["FLASHTALENT_NO_KEYBIND"] = {
 	button2 = NO,
 	button3 = "Don't Ask Again",
 	OnAccept = function(self)
-		PlaySound("igMainMenuOption");
 		KeyBindingFrame_LoadUI();
 		KeyBindingFrame.mode = 1;
 		ShowUIPanel(KeyBindingFrame);

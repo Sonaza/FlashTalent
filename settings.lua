@@ -61,6 +61,7 @@ function Addon:UpdateFonts()
 	FlashTalent_NumberFont_Large_Shadow:SetFont(fontPath, 17, "OUTLINE");
 	FlashTalent_NumberFont_Med:SetFont(fontPath, 13, "OUTLINE");
 	FlashTalent_NumberFont_Med_Shadow:SetFont(fontPath, 13, "OUTLINE");
+	FlashTalent_NumberFont_Small:SetFont(fontPath, 10, "OUTLINE");
 end
 
 function Addon:ToggleEscapeClose()
@@ -209,6 +210,8 @@ function Addon:OpenContextMenu(parentframe)
 	if(not Addon.ContextMenu) then
 		Addon.ContextMenu = CreateFrame("Frame", "FlashTalentContextMenuFrame", parentframe, "UIDropDownMenuTemplate");
 	end
+	
+	FlashPvpTalentChangeFrame:Hide();
 	
 	Addon.ContextMenu:SetPoint("BOTTOM", parentframe, "CENTER", 0, 5);
 	EasyMenu(Addon:GetMenuData(), Addon.ContextMenu, "cursor", 0, 0, "MENU", 5);

@@ -19,6 +19,12 @@
 		</FontHeight>
 	</Font>
 	
+	<Font name="FlashTalent_NumberFont_Small"  font="Interface\AddOns\FlashTalent\media\DORISPP.TTF" outline="NORMAL" virtual="true">
+		<FontHeight>
+			<AbsValue val="10"/>
+		</FontHeight>
+	</Font>
+	
 	<Font name="FlashTalent_NumberFont_Med_Shadow" inherits="FlashTalent_NumberFont_Med" virtual="true">
 		<Shadow>
 			<Offset>
@@ -27,6 +33,125 @@
 			<Color r="0" g="0" b="0" a="0.45"/>
 		</Shadow>
 	</Font>
+	
+	<Button name="FlashPvpTalentSlotButtonTemplate" virtual="true">
+		<Size x="32" y="32"/>
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentIcon" parentKey="icon" setAllPoints="true">
+					<Size x="28" y="28"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="0"/>
+					</Anchors>
+					<TexCoords left="0.075" right="0.925" top="0.075" bottom="0.925"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentRing" parentKey="ring" file="Interface\AddOns\FlashTalent\media\roundborder">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="0"/>
+					</Anchors>
+					<TexCoords left="0.0859375" right="0.4140625" top="0.171875" bottom="0.828125"/>
+				</Texture>
+				<Texture name="$parentHighlight" parentKey="highlight" file="Interface\AddOns\FlashTalent\media\roundborder" alphaMode="ADD" hidden="true">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="0"/>
+					</Anchors>
+					<TexCoords left="0.5859375" right="0.9140625" top="0.171875" bottom="0.828125"/>
+				</Texture>
+				<FontString name="$parentLevelText" parentKey="levelText" inherits="FlashTalent_NumberFont_Med" text="" justifyH="CENTER" hidden="true">
+					<Size x="42" y="42"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0" y="0"/>
+					</Anchors>
+					<Color r="1" g="0.2" b="0.2"/>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Animations>
+			<AnimationGroup looping="REPEAT" parentKey="glow">
+				<Alpha target="$parentHighlight" fromAlpha="1.0" toAlpha="0.5" duration="0.8" smoothing="IN_OUT" order="1"/>
+				<Alpha target="$parentHighlight" fromAlpha="0.5" toAlpha="1.0" duration="0.5" smoothing="IN_OUT" order="2"/>
+			</AnimationGroup>
+		</Animations>
+		<Scripts>
+			<OnLoad>
+				self.glow:Play();
+				self:RegisterForClicks("LeftButtonUp");
+				self:RegisterForDrag("LeftButton");
+			</OnLoad>
+			<OnEnter function="FlashPvpTalentSlotButtonTemplate_OnEnter"/>
+			<OnLeave function="FlashPvpTalentSlotButtonTemplate_OnLeave"/>
+			<OnDragStart function="FlashPvpTalentSlotButtonTemplate_OnDragStart"/>
+			<OnClick function="FlashPvpTalentSlotButtonTemplate_OnClick"/>
+		</Scripts>
+	</Button>
+	
+	<Button name="FlashPvpTalentChangeButtonTemplate" virtual="true" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
+		<Size x="28" y="28"/>
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentIcon" parentKey="icon">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="1" y="-1"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-1" y="1"/>
+					</Anchors>
+					<TexCoords left="0.075" right="0.925" top="0.075" bottom="0.925"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentCheck" parentKey="check" atlas="pvptalents-list-checkmark" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.icon" x="2" y="-6"/>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parent.icon" x="-2" y="1"/>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Small" text="32" justifyH="CENTER" hidden="true">
+					<Size x="32" y="32"/>
+					<Anchors>
+						<Anchor point="CENTER" x="0.5" y="-1"/>
+					</Anchors>
+					<Color r="1" g="0.2" b="0.2"/>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				self:RegisterForDrag("LeftButton");
+			</OnLoad>
+			<OnEnter function="FlashPvpTalentChangeButtonTemplate_OnEnter"/>
+			<OnLeave function="FlashPvpTalentChangeButtonTemplate_OnLeave"/>
+			<OnDragStart function="FlashPvpTalentChangeButtonTemplate_OnDragStart"/>
+			<PostClick function="FlashPvpTalentChangeButtonTemplate_PostClick"/>
+		</Scripts>
+	</Button>
+	
+	<Frame name="FlashPvpTalentChangeFrame" frameStrata="MEDIUM" hidden="true">
+		<Size x="30" y="30"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentBackground">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parent" x="-2" y="2"/>
+						<Anchor point="BOTTOMRIGHT" relativeTo="$parent" x="2" y="-2"/>
+					</Anchors>
+					<Color r="0" g="0" b="0" a="0.75"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentButton1" inherits="FlashPvpTalentChangeButtonTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+				</Anchors>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnHide function="FlashPvpTalentChangeFrame_OnHide"/>
+		</Scripts>
+	</Frame>
 	
 	<Button name="FlashTalentButtonTemplate" virtual="true" inherits="SecureHandlerClickTemplate,SecureActionButtonTemplate">
 		<Size x="32" y="32"/>
@@ -62,17 +187,17 @@
 	<Frame name="FlashTalentTierTemplate" virtual="true">
 		<Size x="102" y="34"/>
 		<Frames>
-			<Button name="$parentTalent1" id="1" parentKey="talent1" inherits="FlashTalentButtonTemplate">
+			<Button name="$parentTalent1" id="1" parentArray="columns" inherits="FlashTalentButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parent" x="1" y="-1"/>
 				</Anchors>
 			</Button>
-			<Button name="$parentTalent2" id="2" parentKey="talent2" inherits="FlashTalentButtonTemplate">
+			<Button name="$parentTalent2" id="2" parentArray="columns" inherits="FlashTalentButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTalent1" x="2" y="0"/>
 				</Anchors>
 			</Button>
-			<Button name="$parentTalent3" id="3" parentKey="talent3" inherits="FlashTalentButtonTemplate">
+			<Button name="$parentTalent3" id="3" parentArray="columns" inherits="FlashTalentButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTalent2" x="2" y="0"/>
 				</Anchors>
@@ -134,59 +259,6 @@
 		</Frames>
 	</Frame>
 	
-	<Button name="FlashTalentTabButtonTemplate" virtual="true">
-		<Size x="42" y="42"/>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture name="$parentIcon" parentKey="icon" setAllPoints="true">
-					<Size x="27" y="27"/>
-					<Anchors>
-						<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" x="0" y="0"/>
-					</Anchors>
-				</Texture>
-			</Layer>
-			<Layer level="ARTWORK">
-				<Texture name="$parentIconFrame" parentKey="iconFrame" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\tabicon-frame">
-					<TexCoords left="0.0625" right="0.4375" top="0.125" bottom="0.875"/>
-				</Texture>
-				<Texture name="$parentIconFrameHover" parentKey="iconFrameHover" setAllPoints="true" file="Interface\AddOns\FlashTalent\media\tabicon-frame" hidden="true" alphaMode="ADD">
-					<TexCoords left="0.0625" right="0.4375" top="0.125" bottom="0.875"/>
-					<Color r="1" g="1" b="1" a="0.5"/>
-				</Texture>
-			</Layer>
-			<Layer level="OVERLAY">
-				<Texture name="$parentIconFrameGlow" parentKey="iconFrameGlow" file="Interface\AddOns\FlashTalent\media\tabicon-frame" alphaMode="ADD" hidden="true">
-					<Size x="57" y="57"/>
-					<Anchors>
-						<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parentIcon" x="0" y="0"/>
-					</Anchors>
-					<TexCoords left="0.5" right="1" top="0" bottom="1"/>
-				</Texture>
-				<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Large_Shadow" text="" justifyH="CENTER" hidden="true">
-					<Size x="32" y="32"/>
-					<Anchors>
-						<Anchor point="CENTER" x="0" y="-1"/>
-					</Anchors>
-				</FontString>
-			</Layer>
-		</Layers>
-		<Animations>
-			<AnimationGroup looping="REPEAT" parentKey="glow">
-				<Alpha target="$parentIconFrameGlow" fromAlpha="1.0" toAlpha="0.5" duration="1.0" smoothing="IN_OUT" order="1"/>
-				<Alpha target="$parentIconFrameGlow" fromAlpha="0.5" toAlpha="1.0" duration="1.0" smoothing="IN_OUT" order="2"/>
-			</AnimationGroup>
-		</Animations>
-		<Scripts>
-			<OnLoad>
-				self.glow:Play();
-				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-			</OnLoad>
-			<OnClick function="FlashTalentTabButton_OnClick"/>
-			<OnEnter function="FlashTalentTabButton_OnEnter"/>
-			<OnLeave function="FlashTalentTabButton_OnLeave"/>
-		</Scripts>
-	</Button>
-	
 	<GameTooltip name="FlashTalentExtraTooltip" frameStrata="TOOLTIP" hidden="true" parent="UIParent" inherits="GameTooltipTemplate">
 	</GameTooltip>
 	
@@ -205,7 +277,7 @@
 			<Anchor point="CENTER" x="180" y="0"/>
 		</Anchors>
 		<Frames>
-			<Frame name="$parentTalents">
+			<Frame name="$parentTalents" parentKey="pveTalents">
 				<Size x="106" y="242"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="-22"/>
@@ -222,98 +294,130 @@
 					</Layer>
 				</Layers>
 				<Frames>
-					<Frame name="$parentTier1" id="1" parentKey="tier1" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier1" id="1" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="$parent" x="2" y="-2"/>
 						</Anchors>
 					</Frame>
-					
-					<Frame name="$parentHonorLevel" parentKey="honorLevel" hidden="true">
-						<Size x="106" y="34"/>
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
-						</Anchors>
-						<Frames>
-							<StatusBar name="$parentXPBarBackground" parentKey="XPBarBackground" inherits="FlashTalentBarTemplate"/>
-							<StatusBar name="$parentXPBar" parentKey="XPBar" inherits="FlashTalentBarTemplate">
-								<Scripts>
-									<OnLoad>
-										self:SetFrameLevel(self:GetParent().XPBarBackground:GetFrameLevel()+1);
-									</OnLoad>
-								</Scripts>
-							</StatusBar>
-							<StatusBar name="$parentXPBarColor" parentKey="XPBarColor" inherits="FlashTalentBarTemplate">
-								<BarTexture file="Interface\AddOns\FlashTalent\media\bartexture" alphaMode="ADD"/>
-								<Scripts>
-									<OnLoad>
-										self:SetFrameLevel(self:GetParent().XPBar:GetFrameLevel()+1);
-									</OnLoad>
-								</Scripts>
-							</StatusBar>
-							<Frame name="$parentLabel" parentKey="label">
-								<Size x="102" y="42"/>
-								<Anchors>
-									<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" x="0" y="0"/>
-								</Anchors>
-								<Layers>
-									<Layer level="ARTWORK">
-										<FontString name="$parentText" parentKey="text" inherits="FlashTalent_NumberFont_Med_Shadow" text="" justifyH="CENTER">
-											<Size x="102" y="42"/>
-											<Anchors>
-												<Anchor point="CENTER" x="0" y="-2"/>
-											</Anchors>
-										</FontString>
-									</Layer>
-								</Layers>
-								<Scripts>
-									<OnLoad>
-										self:SetFrameLevel(self:GetParent().XPBar:GetFrameLevel()+5);
-									</OnLoad>
-								</Scripts>
-							</Frame>
-						</Frames>
-						<Scripts>
-							<OnEnter function="FlashTalentFrameHonorLevel_OnEnter"/>
-							<OnLeave function="FlashTalentFrameHonorLevel_OnLeave"/>
-							<OnMouseDown>
-								FlashTalentFrame_OnMouseDown(FlashTalentFrame);
-							</OnMouseDown>
-							<OnMouseUp>
-								FlashTalentFrame_OnMouseUp(FlashTalentFrame);
-							</OnMouseUp>
-						</Scripts>
-					</Frame>
-					
-					<Frame name="$parentTier2" id="2" parentKey="tier2" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier2" id="2" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="2" y="-36"/>
 						</Anchors>
 					</Frame>
-					<Frame name="$parentTier3" id="3" parentKey="tier3" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier3" id="3" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier2" x="0" y="0"/>
 						</Anchors>
 					</Frame>
-					<Frame name="$parentTier4" id="4" parentKey="tier4" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier4" id="4" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier3" x="0" y="0"/>
 						</Anchors>
 					</Frame>
-					<Frame name="$parentTier5" id="5" parentKey="tier5" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier5" id="5" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier4" x="0" y="0"/>
 						</Anchors>
 					</Frame>
-					<Frame name="$parentTier6" id="6" parentKey="tier6" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier6" id="6" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier5" x="0" y="0"/>
 						</Anchors>
 					</Frame>
-					<Frame name="$parentTier7" id="7" parentKey="tier7" inherits="FlashTalentTierTemplate">
+					<Frame name="$parentTier7" id="7" parentArray="slots" inherits="FlashTalentTierTemplate">
 						<Anchors>
 							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTier6" x="0" y="0"/>
 						</Anchors>
 					</Frame>
+				</Frames>
+			</Frame>
+			
+			<Frame name="$parentPvpTalents" parentKey="pvpTalents">
+				<Size x="32" y="242"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTalents" x="4" y="-4"/>
+				</Anchors>
+				<Frames>
+					<Button name="$parentPvpTalent1" id="1" parentArray="slots" inherits="FlashPvpTalentSlotButtonTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+						</Anchors>
+					</Button>
+					<Button name="$parentPvpTalent2" id="2" parentArray="slots" inherits="FlashPvpTalentSlotButtonTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent1" x="0" y="-4"/>
+						</Anchors>
+					</Button>
+					<Button name="$parentPvpTalent3" id="3" parentArray="slots" inherits="FlashPvpTalentSlotButtonTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent2" x="0" y="-4"/>
+						</Anchors>
+					</Button>
+					<Button name="$parentPvpTalent4" id="4" parentArray="slots" inherits="FlashPvpTalentSlotButtonTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent3" x="0" y="-4"/>
+						</Anchors>
+					</Button>
+					
+					<Button name="$parentWarModeButton" parentKey="warmode" scale="0.48">
+						<Size x="64" y="64"/>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent4" x="2" y="-34"/>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture parentKey="background">
+									<Anchors>
+										<Anchor point="TOPLEFT" x="0" y="5"/>
+										<Anchor point="BOTTOMRIGHT" x="0" y="5"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+							<Layer level="BORDER">
+								<Texture parentKey="swords" atlas="pvptalents-warmode-swords" useAtlasSize="true">
+									<Anchors>
+										<Anchor point="CENTER" x="0" y="9"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+							<Layer level="BORDER" textureSubLevel="1">
+								<Texture parentKey="orb" atlas="pvptalents-warmode-orb" useAtlasSize="true" alpha="0.4">
+									<Anchors>
+										<Anchor point="CENTER" x="-.5" y="5"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+							<Layer level="BORDER" textureSubLevel="2">
+								<Texture parentKey="ring" atlas="pvptalents-warmode-ring" useAtlasSize="true">
+									<Anchors>
+										<Anchor point="CENTER" x="-.5" y="5"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Frames>
+							<ModelScene parentKey="orbModelScene" inherits="NonInteractableModelSceneMixinTemplate" drawLayer="OVERLAY" enableMouse="false">
+								<Size x="56" y="56"/>
+								<Anchors>
+									<Anchor point="CENTER" relativePoint="BOTTOM" x="0" y="12"/>
+								</Anchors>
+							</ModelScene>
+							<ModelScene parentKey="fireModelScene" inherits="NonInteractableModelSceneMixinTemplate" useParentLevel="true" drawLayer="ARTWORK" enableMouse="false" alpha="0.7">
+								<Size x="200" y="200"/>
+								<Anchors>
+									<Anchor point="BOTTOM" x="0" y="-3"/>
+								</Anchors>
+							</ModelScene>
+						</Frames>
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonUp");
+							</OnLoad>
+							<OnEnter function="FlashPvpTalentWarModeButton_OnEnter"/>
+							<OnLeave function="FlashPvpTalentWarModeButton_OnLeave"/>
+							<OnClick function="FlashPvpTalentWarModeButton_OnClick"/>
+						</Scripts>
+					</Button>
 				</Frames>
 			</Frame>
 			
@@ -366,28 +470,9 @@
 				</Scripts>
 			</Button>
 			
-			<Frame name="$parentTabs" parentKey="tabs" clampedToScreen="true">
-				<Size x="44" y="242"/>
-				<Anchors>
-					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parentTalents" x="2" y="0"/>
-				</Anchors>
-				<Frames>
-					<Button name="$parentPVETalents" id="1" parentKey="pvetalents" inherits="FlashTalentTabButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="0" y="4"/>
-						</Anchors>
-					</Button>
-					<Button name="$parentPVPTalents" id="2" parentKey="pvptalents" inherits="FlashTalentTabButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPVETalents" x="0" y="4"/>
-						</Anchors>
-					</Button>
-				</Frames>
-			</Frame>
-			
 			<Button name="$parentSettingsButton" inherits="BrowserButtonTemplate">
 				<Anchors>
-					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$parentTabs" x="0" y="0"/>
+					<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parentTalents" x="0" y="0"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK" textureSubLevel="5">
