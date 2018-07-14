@@ -359,7 +359,7 @@
 						</Anchors>
 					</Button>
 					
-					<Button name="$parentWarModeButton" parentKey="warmode" scale="0.48">
+					<Frame name="$parentWarModeArt" parentKey="warmode" scale="0.48">
 						<Size x="64" y="64"/>
 						<Anchors>
 							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent4" x="2" y="-34"/>
@@ -409,6 +409,12 @@
 								</Anchors>
 							</ModelScene>
 						</Frames>
+					</Frame>
+					<Button name="$parentInvisibleWarModeButton" parentKey="warmodeButton">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parentWarModeArt" x="-3" y="7"/>
+							<Anchor point="BOTTOMRIGHT" relativeTo="$parentWarModeArt" x="3" y="0"/>
+						</Anchors>
 						<Scripts>
 							<OnLoad>
 								self:RegisterForClicks("LeftButtonUp");

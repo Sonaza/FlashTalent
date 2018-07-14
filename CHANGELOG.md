@@ -1,3 +1,9 @@
+## 3.0.0
+* Updated for Battle for Azeroth.
+* Removed old PVP talent frames.
+* Added support for new PVP talent system.
+* Added War Mode toggle button.
+
 ## 2.2.1
 * Restored option to choose if you wish to match specialization names to set names for automatic switching.
 * Fixed another equipment set bug.
