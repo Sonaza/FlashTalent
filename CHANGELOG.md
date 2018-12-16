@@ -1,3 +1,6 @@
+## 3.1.0
+* Patch 8.1.0 fixes.
+
 ## 3.0.0
 * Updated for Battle for Azeroth.
 * Removed old PVP talent frames.
