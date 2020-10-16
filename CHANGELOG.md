@@ -1,4 +1,4 @@
-## 4.0.1
+## 4.1.0
 * Added Shadowlands Tomes & Codices
 * Bugfix 
 * Auto suggest cheapest Tomes & Codices to use
