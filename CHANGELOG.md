@@ -1,3 +1,6 @@
+## 3.2.0
+* Patch 9.0.1 fixes.
+
 ## 3.1.0
 * Patch 8.1.0 fixes.
 

@@ -4,7 +4,7 @@
 -- http://sonaza.com
 ------------------------------------------------------------
 
-HONOR_TALENT_UNLOCK_LEVEL = 110;
+HONOR_TALENT_UNLOCK_LEVEL = 50;
 
 local ADDON_NAME = ...;
 local Addon = LibStub("AceAddon-3.0"):NewAddon(select(2, ...), ADDON_NAME, "AceEvent-3.0");
@@ -36,24 +36,29 @@ end
 
 local TALENT_CLEAR_ITEMS = {
 	{
-		-- Under or at lvl 100 items
-		141640, -- Tome of Clear Mind
-		141641, -- Codex of Clear Mind
+		-- Under or at lvl 49 items
+		{
+			141640, -- Tome of Clear Mind
+			153647, -- Tome of Quiet Mind
+			141446, -- Tome of Tranquil Mind
+		},
+		{
+			141333, -- Codex of Tranquil Mind
+			141641, -- Codex of Clear Mind
+			153646, -- Codex of Quiet Mind
+		}
 	},
 	{
-		-- Over lvl 100 items
-		141640, -- Tome of Clear Mind
-		141333, -- Codex of Tranquil Mind
-	},
-	{
-		-- Lvl 110 items
-		141446, -- Tome of Tranquil Mind
-		141333, -- Codex of Tranquil Mind
-	},
-	{
-		-- Lvl 120 items
-		153647, -- Tome of Quiet Mind
-		153646, -- Codex of Quiet Mind
+		-- Lvl 50
+		{
+			141640, -- Tome of Clear Mind
+			153647, -- Tome of Quiet Mind
+			141446, -- Tome of Tranquil Mind
+		},
+		{
+			141333, -- Codex of Tranquil Mind
+			153646, -- Codex of Quiet Mind
+		}
 	},
 };
 	
@@ -62,7 +67,7 @@ local TALENT_CLEAR_BUFFS = {
 	{ id = 226234, },            -- Codex of Tranquil Mind (110)
 	{ id = 256229, },            -- Codex of Quiet Mind
 	
-	{ id = 227563, lvl = 109 },  -- Tome of Clear Mind (109)
+	{ id = 227563, lvl = 49 },   -- Tome of Clear Mind (109)
 	{ id = 227041 },             -- Tome of Tranquil Mind (110)
 	{ id = 256231 },             -- Tome of Quiet Mind
 };
@@ -945,8 +950,8 @@ function Addon:UpdatePVETalentFrame()
 	
 	local playerLevel = UnitLevel("player");
 	local _, playerClass = UnitClass("player");
-	
-	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
+
+	local tierLevels = NEW_CLASS_TALENT_LEVELS
 	
 	for tier, tierFrame in pairs(FlashTalentFrameTalents.slots) do
 		Addon:HighlightTalent(tier, -1);
@@ -1152,9 +1157,9 @@ function Addon:UpdatePVETalentCooldowns()
 	
 	local playerLevel = UnitLevel("player");
 	local _, playerClass = UnitClass("player");
-	
-	local tierLevels = CLASS_TALENT_LEVELS[playerClass] or CLASS_TALENT_LEVELS.DEFAULT;
-	
+
+	local tierLevels = NEW_CLASS_TALENT_LEVELS
+
 	for tier, tierFrame in pairs(FlashTalentFrameTalents.slots) do
 		local tierIsOnCooldown = false;
 		
@@ -1222,7 +1227,7 @@ function Addon:SPELL_UPDATE_USABLE()
 	Addon:UpdateTalentCooldowns();
 end
 
-local HONOR_LEVEL_UNLOCK = 110;
+local HONOR_LEVEL_UNLOCK = 50;
 function FlashTalentFrameHonorLevel_OnEnter(self)
 	if (TipTac and TipTac.AddModifiedTip and not self.tiptacAdded) then
 		self.tiptacAdded = true;
@@ -1462,31 +1467,37 @@ function Addon:GetTalentClearInfo()
 	local items;
 	
 	local level = UnitLevel("player");
-	if (level >= 120) then
-		items = TALENT_CLEAR_ITEMS[4];
-		-- Apparently Legion items still work in BFA so using this workaround if player doesn't have any of the new items
-		if (GetItemCount(items[1]) == 0 and GetItemCount(TALENT_CLEAR_ITEMS[3][1]) > 0) then
-			items[1] = TALENT_CLEAR_ITEMS[3][1];
-		end
-		if (GetItemCount(items[2]) == 0 and GetItemCount(TALENT_CLEAR_ITEMS[3][2]) > 0) then
-			items[2] = TALENT_CLEAR_ITEMS[3][2];
-		end
-	elseif (level >= 110) then
-		items = TALENT_CLEAR_ITEMS[3];
-	elseif (level > 100) then
+	
+	if (level >= 50) then
 		items = TALENT_CLEAR_ITEMS[2];
 	else
 		items = TALENT_CLEAR_ITEMS[1];
 	end
 	
-	local info = {};
-	for _, itemID in ipairs(items) do
-		tinsert(info, {
-			itemID, GetItemCount(itemID), GetItemIcon(itemID),
-		});
+	local single, multiple;
+	
+	
+	for _, itemID in ipairs(items[1]) do
+		if(GetItemCount(itemID) > 0 ) then
+			single = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
+			break
+		end
+	end
+	if (not single) then
+	  multiple = {items[1][1], GetItemCount(items[1][1]), GetItemIcon(items[1][1])} 
 	end
 	
-	return info;
+	for _, itemID in ipairs(items[2]) do
+		if(GetItemCount(itemID) > 0 ) then
+			multiple = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
+			break
+		end
+	end
+	if (not multiple) then
+	  multiple = {items[2][1], GetItemCount(items[2][1]), GetItemIcon(items[2][1])} 
+	end
+
+	return {single , multiple};
 end
 
 function Addon:UpdateReagentCount()
