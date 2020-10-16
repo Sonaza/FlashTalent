@@ -38,26 +38,41 @@ local TALENT_CLEAR_ITEMS = {
 	{
 		-- Under or at lvl 49 items
 		{
-			141640, -- Tome of Clear Mind
 			153647, -- Tome of Quiet Mind
+			141640, -- Tome of Clear Mind
 			141446, -- Tome of Tranquil Mind
 		},
 		{
+			153646, -- Codex of Quiet Mind
 			141333, -- Codex of Tranquil Mind
 			141641, -- Codex of Clear Mind
-			153646, -- Codex of Quiet Mind
 		}
 	},
 	{
 		-- Lvl 50
 		{
+			153647, -- Tome of Quiet Mind
 			141640, -- Tome of Clear Mind
+			141446, -- Tome of Tranquil Mind
+		},
+		{
+			153646, -- Codex of Quiet Mind
+			141333, -- Codex of Tranquil Mind
+			141641, -- Codex of Clear Mind
+		}
+	},
+	{
+		-- Above level 50
+		{
+			173049, -- Tome of the Still Mind
 			153647, -- Tome of Quiet Mind
 			141446, -- Tome of Tranquil Mind
 		},
 		{
-			141333, -- Codex of Tranquil Mind
+			173048, -- Codex of the Still Mind
 			153646, -- Codex of Quiet Mind
+			141333, -- Codex of Tranquil Mind
+			141641, -- Codex of Clear Mind
 		}
 	},
 };
@@ -66,10 +81,12 @@ local TALENT_CLEAR_BUFFS = {
 	{ id = 227565, },            -- Codex of Clear Mind (100) 
 	{ id = 226234, },            -- Codex of Tranquil Mind (110)
 	{ id = 256229, },            -- Codex of Quiet Mind
+	{ id = 324029, },            -- Codex of The Still Mind
 	
 	{ id = 227563, lvl = 49 },   -- Tome of Clear Mind (109)
 	{ id = 227041 },             -- Tome of Tranquil Mind (110)
 	{ id = 256231 },             -- Tome of Quiet Mind
+	{ id = 321923 },             -- Tome of The Still Mind
 };
 
 SLASH_FLASHTALENT1	= "/flashtalent";
@@ -1468,36 +1485,37 @@ function Addon:GetTalentClearInfo()
 	
 	local level = UnitLevel("player");
 	
-	if (level >= 50) then
+	if (level > 50) then
+		items = TALENT_CLEAR_ITEMS[3];
+	elseif (level == 50) then
 		items = TALENT_CLEAR_ITEMS[2];
 	else
 		items = TALENT_CLEAR_ITEMS[1];
 	end
 	
-	local single, multiple;
-	
+	local tome, codex;
 	
 	for _, itemID in ipairs(items[1]) do
 		if(GetItemCount(itemID) > 0 ) then
-			single = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
+			tome = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
 			break
 		end
 	end
-	if (not single) then
-	  multiple = {items[1][1], GetItemCount(items[1][1]), GetItemIcon(items[1][1])} 
+	if (not tome) then
+	  tome = {items[1][1], GetItemCount(items[1][1]), GetItemIcon(items[1][1])} 
 	end
 	
 	for _, itemID in ipairs(items[2]) do
 		if(GetItemCount(itemID) > 0 ) then
-			multiple = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
+			codex = {itemID, GetItemCount(itemID), GetItemIcon(itemID)}
 			break
 		end
 	end
-	if (not multiple) then
-	  multiple = {items[2][1], GetItemCount(items[2][1]), GetItemIcon(items[2][1])} 
+	if (not codex) then
+	  codex = {items[2][1], GetItemCount(items[2][1]), GetItemIcon(items[2][1])} 
 	end
 
-	return {single , multiple};
+	return {tome , codex};
 end
 
 function Addon:UpdateReagentCount()
