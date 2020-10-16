@@ -1,3 +1,6 @@
+## 4.0.0
+* Patch 9.0.1 fixes contributed by Shraen (https://github.com/Shraen).
+
 ## 3.1.0
 * Patch 8.1.0 fixes.
 

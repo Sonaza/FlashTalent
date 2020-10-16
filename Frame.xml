@@ -353,16 +353,11 @@
 							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent2" x="0" y="-4"/>
 						</Anchors>
 					</Button>
-					<Button name="$parentPvpTalent4" id="4" parentArray="slots" inherits="FlashPvpTalentSlotButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent3" x="0" y="-4"/>
-						</Anchors>
-					</Button>
 					
 					<Frame name="$parentWarModeArt" parentKey="warmode" scale="0.48">
 						<Size x="64" y="64"/>
 						<Anchors>
-							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent4" x="2" y="-34"/>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentPvpTalent3" x="2" y="-34"/>
 						</Anchors>
 						<Layers>
 							<Layer level="BACKGROUND">
