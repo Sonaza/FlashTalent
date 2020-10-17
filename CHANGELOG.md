@@ -1,6 +1,7 @@
 ## 4.0.1
-* Added Shadowlands Tomes & Codices
-* Auto suggest cheapest Tomes & Codices to use
+* More patch 9.0.1 contributions by Shraen (https://github.com/Shraen):
+  * Added Shadowlands Tomes & Codices
+  * Auto suggest cheapest Tomes & Codices to use
 
 ## 4.0.0
 * Patch 9.0.1 fixes contributed by Shraen (https://github.com/Shraen).
