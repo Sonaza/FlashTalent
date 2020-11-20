@@ -447,7 +447,7 @@
 				</Scripts>
 			</Button>
 			
-			<Button name="FlashTalentSpecButton" inherits="BrowserButtonTemplate" parentKey="changeDualSpec">
+			<Button name="FlashTalentSpecButton" inherits="UIPanelButtonTemplate" parentKey="changeDualSpec">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parentTalents" x="3" y="0"/>
 				</Anchors>
@@ -471,7 +471,7 @@
 				</Scripts>
 			</Button>
 			
-			<Button name="$parentSettingsButton" inherits="BrowserButtonTemplate">
+			<Button name="$parentSettingsButton" inherits="UIPanelButtonTemplate">
 				<Anchors>
 					<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parentTalents" x="0" y="0"/>
 				</Anchors>
